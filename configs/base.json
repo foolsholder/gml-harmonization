@@ -1,0 +1,68 @@
+{
+  "model": {
+    "encoder": "UnetEncoder",
+    "decoder": "UnetDecoder"
+  },
+  "trainer": {
+    "type": "SupervisedTrainer"
+  },
+  "optimizers": {
+    "AdamW": {
+      "encoder": {
+        "lr": 1e-3,
+        "weight_decay": 1e-4
+      },
+      "decoder": {
+        "lr": 2e-3,
+        "weight_decay": 1e-4
+      }
+    }
+  },
+  "criterions": [
+    {
+      "type": "MSELoss",
+      "criterion_key": "mse"
+    },
+    {
+      "type": "PSNR",
+      "criterion_key": "psnr"
+    }
+  ],
+  "criterions_callbacks": [
+    {
+      "type": "CriterionCallback",
+      "metric_key": "mse",
+      "input_key": "outputs",
+      "target_key": "targets",
+      "criterion_key": "mse"
+    },
+    {
+      "type": "CriterionCallback",
+      "metric_key": "psnr",
+      "input_key": "outputs",
+      "target_key": "targets",
+      "criterion_key": "psnr"
+    }
+  ],
+  "optimizers_callbacks": [
+    {
+      "metric_key": "mse",
+      "optimizer_key": "AdamW"
+    }
+  ],
+  "checkpoints_callbacks": [
+    {
+      "use": false,
+      "loader_key": "valid",
+      "metric_key": "mse",
+      "minimize": true,
+      "save_n_best": 1,
+      "logdir": "somewhere"
+    }
+  ],
+  "schedulers": [],
+  "data": {
+    "train": [],
+    "valid": []
+  }
+}
