@@ -26,7 +26,7 @@ def psnr(outputs: torch.Tensor,
     :param targets: [batch_size, C, H, W]
     :return: [batch_size,]
     """
-    mse_res = mse(outputs, targets)
+    mse_res = mse(outputs, targets, reduce=False)
     psnr_res = 10 * torch.log10(max_pixel_value ** 2 / mse_res)
     return torch.mean(psnr_res)
 
