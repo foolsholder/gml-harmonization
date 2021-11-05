@@ -2,7 +2,9 @@ from albumentations import (
     BasicTransform,
     Compose,
     Normalize,
-    Resize
+    Resize,
+    RandomResizedCrop,
+    HorizontalFlip
 )
 from albumentations.pytorch import ToTensorV2
 from copy import copy
@@ -29,7 +31,9 @@ def get_transform(augmentations_cfg: Dict[str, Dict[str, str]]) -> [Compose, Com
         }
     )
     augmentations_dict = {
-        "Resize": Resize
+        "Resize": Resize,
+        "RandomResizedCrop": RandomResizedCrop,
+        "HorizontalFlip": HorizontalFlip
     }
     augmentations_list: List[BasicTransform] = []
     for aug_type_name, aug_params in augmentations_cfg.items():
@@ -52,19 +56,19 @@ def get_dataset(data_cfg: Dict[str, Any], split: str, composed: bool = True) -> 
     augmentations_cfg = dataset_cfg.pop('augmentations')
     augmentations, to_tensor_transforms = get_transform(augmentations_cfg)
 
-    dataset_paths = dataset_cfg['dataset_paths']
+    dataset_paths = data_cfg['dataset_paths']
 
     if composed:
-        return ComposedDataset([HDataset(dataset_paths[name], split,
-                                         augmentations=augmentations,
-                                         to_tensor_transforms=to_tensor_transforms) for name in datasets])
+        return ComposedDataset([HDataset(dataset_paths[name], split) for name in datasets],
+                               augmentations=augmentations,
+                               to_tensor_transforms=to_tensor_transforms)
     return HDataset(dataset_paths[datasets[0]], split,
                     augmentations=augmentations,
                     to_tensor_transforms=to_tensor_transforms)
 
 
 def get_dataloader(data_cfg: Dict[str, Any], train: bool = False) -> DataLoader:
-    split = 'train' if train else 'valid'
+    split = 'train' if train else 'test'
     dataset: Dataset = get_dataset(data_cfg, split)
 
     num_workers: int = data_cfg['num_workers']
@@ -78,11 +82,13 @@ def get_dataloader(data_cfg: Dict[str, Any], train: bool = False) -> DataLoader:
 
 
 def get_loaders(data_cfg: Dict[str, Any], only_valid: bool = False) -> Dict[str, DataLoader]:
-    loaders: Dict[str, DataLoader] = {
-        'valid': get_dataloader(data_cfg, train=False)
-    }
+    loaders: Dict[str, DataLoader] = {}
     if not only_valid:
         loaders.update({
             'train': get_dataloader(data_cfg, train=True)
         })
+    loaders.update({
+        'valid': get_dataloader(data_cfg, train=False)
+    })
+
     return loaders

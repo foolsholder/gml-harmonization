@@ -17,4 +17,4 @@ class ComposedDataset(BaseDataset):
     def get_sample(self, idx: int) -> Dict[str, Any]:
         dataset_idx, sample_idx = self.dataset_samples[idx]
         dataset = self._datasets[dataset_idx]
-        return dataset.get_sample(idx)
+        return dataset.get_sample(sample_idx)

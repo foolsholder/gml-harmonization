@@ -4,7 +4,7 @@ import torch
 from catalyst import dl
 from copy import copy
 from torch.optim import Optimizer
-from typing import Dict, Any, Sequence, List
+from typing import Dict, Any, Tuple, List, Callable
 
 from .supervised import SupervisedTrainer
 from .self_supervised import SelfSupervisedTrainer
@@ -21,7 +21,7 @@ def get_metric_callbacks(metric_callbacks_cfg: List[Dict[str, str]]) -> Dict[str
     callbacks: Dict[str, dl.Callback] = {}
 
     # noinspection PyTypeChecker
-    possible_callbacks: Dict[str, dl.Callback] = {
+    possible_callbacks: Dict[str, Callable[[Any], dl.Callback]] = {
         "MSECallback": MSECallback,
         "PSNRCallback": PSNRCallback,
         "FNMSECallback": FNMSECallback,
@@ -31,7 +31,7 @@ def get_metric_callbacks(metric_callbacks_cfg: List[Dict[str, str]]) -> Dict[str
     for metric_idx, callback_dct in enumerate(metric_callbacks_cfg):
         callback_dct = copy(callback_dct)
         type_name = callback_dct.pop('type')
-        callback_type = getattr(possible_callbacks, type_name)
+        callback_type = possible_callbacks[type_name]
         callback = callback_type(**callback_dct)
 
         callbacks['metric_{}'.format(metric_idx + 1)] = callback
@@ -52,17 +52,17 @@ def get_optimizers(model: torch.nn.Module, optimizers_cfg: Dict[str, Dict[str, A
 
         for param_group_name, opt_params in opt_cfg.items():
             param_group = getattr(model, param_group_name)
-            group_params = {'params': param_group.parameters()}.update(opt_params)
+            group_params = {'params': param_group.parameters()}
+            group_params.update(opt_params)
             opt_list_args += [group_params]
-
         optimizers[opt_name] = opt_class(opt_list_args)
 
     return optimizers
 
 
 def create_trainer(trainer_cfg: Dict[str, str]) -> dl.Runner:
-    cfg = copy(trainer_cfg)
-    trainer_type_name = cfg.pop('type')
+    trainer_cfg = copy(trainer_cfg)
+    trainer_type_name = trainer_cfg.pop('type')
 
     trainers = {
         'SupervisedTrainer': SupervisedTrainer,
@@ -70,10 +70,10 @@ def create_trainer(trainer_cfg: Dict[str, str]) -> dl.Runner:
     }
     trainer_type = trainers[trainer_type_name]
 
-    return trainer_type(**cfg)
+    return trainer_type(**trainer_cfg)
 
 
-def get_optimizers_callbacks(optimizers_callbacks_cfg: Sequence[Dict]) -> Dict[str: dl.OptimizerCallback]:
+def get_optimizers_callbacks(optimizers_callbacks_cfg: List[Dict[str, Any]]) -> Dict[str, dl.OptimizerCallback]:
     """
     :param optimizers_callbacks_cfg: Sequence[ optim_callback params... ]
     :return:
@@ -97,19 +97,24 @@ def get_checkpoints_callbacks(checkpoints_cfg: List[Dict[str, Any]]) -> Dict[str
     return checkpoint_callbacks
 
 
-def get_scheduler(optimizers: Dict[str, Optimizer], schedulers_cfg: Dict[str, Any]) -> Dict[str, Any]:
+def get_scheduler(optimizers: Dict[str, Optimizer],
+                  schedulers_cfg: Dict[str, Any]
+                  ) -> Tuple[Dict[str, Any], Dict[str, dl.SchedulerCallback]]:
     """
     :param optimizers: Dict[str, Optimizer]
     :param schedulers_cfg: Dict[str, LRScheduler]
     :return:
     """
     scheds: Dict[str, Any] = {}
+    scheds_callbacks: Dict[str, dl.SchedulerCallback] = {}
 
     for opt_name, sched_params in schedulers_cfg.items():
         dct_params = copy(sched_params)
         sched_type_name = dct_params.pop('type')
+        mode = dct_params.pop('mode')
         sched_type = getattr(torch.optim.lr_scheduler, sched_type_name)
         sched = sched_type(optimizer=optimizers[opt_name], **dct_params)
         scheds.update({opt_name: sched})
+        scheds_callbacks[opt_name] = dl.SchedulerCallback(mode=mode)
 
-    return scheds
+    return scheds, scheds_callbacks

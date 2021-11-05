@@ -20,3 +20,7 @@ def evaluate_model(model, cfg: Mapping[str, Any]) -> Dict[str, Any]:
         verbose=True,
     )
     return metrics
+
+
+def evaluate_metrics_on_signle(model, cfg: Mapping[str, Any]) -> Dict[str, Any]:
+    pass

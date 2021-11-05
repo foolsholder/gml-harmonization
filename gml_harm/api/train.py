@@ -16,7 +16,7 @@ def train_model(model, cfg: Dict[str, Any]):
     trainer = create_trainer(cfg['trainer'])
 
     opts = get_optimizers(model, cfg['optimizers'])
-    opts_callbacks = get_optimizers_callbacks(cfg['optimizers_callbabs'])
+    opts_callbacks = get_optimizers_callbacks(cfg['optimizers_callbacks'])
 
     metric_callbacks = get_metric_callbacks(cfg['metric_callbacks'])
 
@@ -27,8 +27,8 @@ def train_model(model, cfg: Dict[str, Any]):
         all_callbacks.update(callbacks_dict)
 
     if 'schedulers' in cfg:
-        scheds = get_scheduler(opts, cfg['schedulers'])
-        all_callbacks.update({'schedulers': dl.SchedulerCallback()})
+        scheds, scheds_callbacks = get_scheduler(opts, cfg['schedulers'])
+        all_callbacks.update(scheds_callbacks)
     else:
         scheds = None
     loaders = get_loaders(cfg['data'])

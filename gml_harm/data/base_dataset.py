@@ -12,7 +12,7 @@ from typing import Any, Dict, Union, List
 
 class BaseDataset(Dataset):
     def __init__(self,
-                 augmentations: Compose,
+                 augmentations: Compose = None,
                  to_tensor_transforms: Compose = None) -> None:
         """
         default Compose.additional_targets = {
@@ -33,7 +33,7 @@ class BaseDataset(Dataset):
         self.check_sample_types(sample)
         sample = self.augment_sample(sample)
 
-        sample = self.to_tensor_transforms(sample)
+        sample = self.to_tensor_transforms(**sample)
         sample['mask'] = sample['mask'][None, :, :]
 
         sample_info = ['composite_path', 'gt_path', 'mask_path', 'image_idx']
@@ -42,7 +42,8 @@ class BaseDataset(Dataset):
             'images': sample['image'],
             'targets': sample['target'],
             'masks': sample['mask']
-        }.update(sample_info_dict)
+        }
+        out.update(sample_info_dict)
         return out
 
     def get_sample(self, idx: int) -> Dict[str, Union[np.array, str]]:
@@ -68,7 +69,9 @@ class BaseDataset(Dataset):
         valid_augmentation: bool = False
         aug_output: Dict[str, np.array] = {}
         while not valid_augmentation:
-            aug_output = self.augmentations(image=sample['image'], **additional_targets)
+            aug_output = self.augmentations(image=sample['image'],
+                                            mask=sample['mask'],
+                                            **additional_targets)
             valid_augmentation = self.check_augmented_sample(aug_output)
 
         for target_name, transformed_target in aug_output.items():
@@ -123,7 +126,6 @@ class HDataset(BaseDataset):
             'composite_path': composite_path,
             'gt_path': real_path,
             'mask_path': mask_path,
-            'image_idx': index
+            'image_idx': idx
         }
-
         return out
