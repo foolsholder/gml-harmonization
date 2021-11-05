@@ -45,7 +45,7 @@ def train_model(model, cfg: Dict[str, Any]):
         criterion=crits,
         loaders=loaders,
         valid_loader='valid',
-        num_epochs=cfg['num_epocs'],
+        num_epochs=cfg['num_epochs'],
         callbacks=all_callbacks,
         loggers={
             "wandb": dl.WandbLogger(project=project_name, name=experiment_name)

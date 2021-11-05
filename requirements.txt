@@ -1,3 +1,6 @@
 catalyst
 torch
 typing
+albumentations
+numpy
+opencv-python

@@ -62,7 +62,33 @@
   ],
   "schedulers": [],
   "data": {
-    "train": [],
-    "valid": []
-  }
+    "dataset_paths": {
+      "HCOCO": "",
+      "HAdobe5k": "",
+      "HFlickr": "",
+      "Hday2night": ""
+    },
+    "train": {
+      "datastes": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
+      "augmentations": {
+        "RandomResizedCrop": {
+          "scale": [0.5, 1]
+        },
+        "HorizontalFlip": {}
+      }
+    },
+    "valid": {
+        "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
+        "augmentations": {
+          "Resize": {
+
+          }
+        }
+    },
+    "batch_size": 16,
+    "num_workers": 8
+  },
+  "gpus": "0",
+  "num_epochs": 180,
+  "project_name": "gml_harm"
 }

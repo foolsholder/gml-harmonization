@@ -14,7 +14,7 @@ def evaluate_model(model, cfg: Mapping[str, Any]):
     crits = get_criterions(cfg['criterions'])
     crits_callbacks = get_criterions_callbacks(cfg['criterions_callbacks'])
 
-    loaders = get_loaders(cfg['data'])
+    loaders = get_loaders(cfg['data'], only_valid=True)
     trainer.train(
         model=model,
         criterion=crits,
