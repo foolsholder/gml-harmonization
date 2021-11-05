@@ -1,6 +1,6 @@
 import torch
 
-from torch import nn
+
 from catalyst import dl
 from copy import copy
 from torch.optim import Optimizer
@@ -9,38 +9,34 @@ from typing import Dict, Any, Sequence, List
 from .supervised import SupervisedTrainer
 from .self_supervised import SelfSupervisedTrainer
 
-from ..core.losses.psnr_metric import PSNR
+from catalyst.dl import MetricAggregationCallback
+from ..core.callbacks.metric_callbacks import (
+    MSECallback,
+    PSNRCallback,
+    FNMSECallback
+)
 
-def get_criterions_callbacks(criterions_callbacks_cfg: List[Dict[str, str]]) -> Dict[str, dl.Callback]:
+
+def get_metric_callbacks(metric_callbacks_cfg: List[Dict[str, str]]) -> Dict[str, dl.Callback]:
     callbacks: Dict[str, dl.Callback] = {}
 
-    for crit_idx, callback_dct in enumerate(criterions_callbacks_cfg):
-        callback_dct = copy(callback_dct)
-        type_name = callback_dct.pop('type')
-        callback_type = getattr(dl, type_name)
-        callback = callback_type(**callback_dct)
-
-        callbacks['criterion_{}'.format(crit_idx + 1)] = callback
-
-    return callbacks
-
-
-def get_criterions(criterions_cfg: List[Dict[str, str]]) -> Dict[str, nn.Module]:
-    crits: Dict[str, nn.Module] = {}
-
-    criterions = {
-        "MSELoss": nn.MSELoss,
-        "PSNR": PSNR
+    # noinspection PyTypeChecker
+    possible_callbacks: Dict[str, dl.Callback] = {
+        "MSECallback": MSECallback,
+        "PSNRCallback": PSNRCallback,
+        "FNMSECallback": FNMSECallback,
+        "MetricAggregationCallback": MetricAggregationCallback
     }
 
-    for crit_dict in criterions_cfg:
-        crit_dict = copy(crit_dict)
-        type_name = crit_dict.pop('type')
-        crit_key = crit_dict.pop('criterion_key')
+    for metric_idx, callback_dct in enumerate(metric_callbacks_cfg):
+        callback_dct = copy(callback_dct)
+        type_name = callback_dct.pop('type')
+        callback_type = getattr(possible_callbacks, type_name)
+        callback = callback_type(**callback_dct)
 
-        crits[crit_key] = criterions[type_name]()
+        callbacks['metric_{}'.format(metric_idx + 1)] = callback
 
-    return crits
+    return callbacks
 
 
 def get_optimizers(model: torch.nn.Module, optimizers_cfg: Dict[str, Dict[str, Any]]) -> Dict[str, Optimizer]:

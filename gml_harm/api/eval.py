@@ -1,26 +1,22 @@
-from typing import Mapping, Any
+from typing import Mapping, Any, Dict
 
 from ..engine.utils import (
     create_trainer,
-    get_criterions,
-    get_criterions_callbacks
+    get_metric_callbacks
 )
 from ..data.utils import get_loaders
 
 
-def evaluate_model(model, cfg: Mapping[str, Any]):
+def evaluate_model(model, cfg: Mapping[str, Any]) -> Dict[str, Any]:
     trainer = create_trainer(cfg['trainer'])
 
-    crits = get_criterions(cfg['criterions'])
-    crits_callbacks = get_criterions_callbacks(cfg['criterions_callbacks'])
+    metric_callbacks = get_metric_callbacks(cfg['metric_callbacks'])
 
     loaders = get_loaders(cfg['data'], only_valid=True)
-    trainer.train(
+    metrics: Dict[str, Any] = trainer.evaluate_loader(
         model=model,
-        criterion=crits,
-        loaders=loaders,
-        valid_loader='valid',
-        num_epochs=1,
-        callbacks=crits_callbacks,
-        verbose=1,
+        loader=loaders['valid'],
+        callbacks=metric_callbacks,
+        verbose=True,
     )
+    return metrics

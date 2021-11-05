@@ -3,8 +3,7 @@ from typing import Dict, Any
 
 from ..engine.utils import (
     create_trainer,
-    get_criterions,
-    get_criterions_callbacks,
+    get_metric_callbacks,
     get_optimizers,
     get_optimizers_callbacks,
     get_checkpoints_callbacks,
@@ -19,13 +18,12 @@ def train_model(model, cfg: Dict[str, Any]):
     opts = get_optimizers(model, cfg['optimizers'])
     opts_callbacks = get_optimizers_callbacks(cfg['optimizers_callbabs'])
 
-    crits = get_criterions(cfg['criterions'])
-    crits_callbacks = get_criterions_callbacks(cfg['criterions_callbacks'])
+    metric_callbacks = get_metric_callbacks(cfg['metric_callbacks'])
 
     checkpoints_callbacks = get_checkpoints_callbacks(cfg['checkpoints_callbacks'])
 
     all_callbacks = {}
-    for callbacks_dict in [crits_callbacks, opts_callbacks, checkpoints_callbacks]:
+    for callbacks_dict in [metric_callbacks, opts_callbacks, checkpoints_callbacks]:
         all_callbacks.update(callbacks_dict)
 
     if 'schedulers' in cfg:
@@ -42,7 +40,7 @@ def train_model(model, cfg: Dict[str, Any]):
         model=model,
         optimizer=opts,
         scheduler=scheds,
-        criterion=crits,
+        criterion=None,
         loaders=loaders,
         valid_loader='valid',
         num_epochs=cfg['num_epochs'],

@@ -18,30 +18,21 @@
       }
     }
   },
-  "criterions": [
+  "metric_callbacks": [
     {
-      "type": "MSELoss",
-      "criterion_key": "mse"
+      "type": "MSECallback",
+      "input_key": "outputs",
+      "target_key": "targets"
     },
     {
-      "type": "PSNR",
-      "criterion_key": "psnr"
-    }
-  ],
-  "criterions_callbacks": [
-    {
-      "type": "CriterionCallback",
-      "metric_key": "mse",
+      "type": "PSNRCallback",
       "input_key": "outputs",
-      "target_key": "targets",
-      "criterion_key": "mse"
+      "target_key": "targets"
     },
     {
-      "type": "CriterionCallback",
-      "metric_key": "psnr",
+      "type": "FNMSECallback",
       "input_key": "outputs",
-      "target_key": "targets",
-      "criterion_key": "psnr"
+      "target_key": "targets_and_masks"
     }
   ],
   "optimizers_callbacks": [

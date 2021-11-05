@@ -33,8 +33,8 @@ class BaseDataset(Dataset):
         self.check_sample_types(sample)
         sample = self.augment_sample(sample)
 
-        sample['mask'] = sample['mask'][:, :, np.newaxis]
         sample = self.to_tensor_transforms(sample)
+        sample['mask'] = sample['mask'][None, :, :]
 
         sample_info = ['composite_path', 'gt_path', 'mask_path', 'image_idx']
         sample_info_dict = {info: sample[info] for info in sample_info}
