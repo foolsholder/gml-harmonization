@@ -33,8 +33,16 @@ def get_metric_callbacks(metric_callbacks_cfg: List[Dict[str, str]]) -> Dict[str
     for metric_idx, callback_dct in enumerate(metric_callbacks_cfg):
         callback_dct = copy(callback_dct)
         type_name = callback_dct.pop('type')
+
+        only_eval = False
+        if 'only_eval' in callback_dct:
+            only_eval = callback_dct.pop('only_eval')
+
         callback_type = possible_callbacks[type_name]
         callback = callback_type(**callback_dct)
+
+        if only_eval:
+            callback = dl.ControlFlowCallback(callback, loaders='valid')
 
         callbacks['metric_{}'.format(metric_idx + 1)] = callback
 
