@@ -114,9 +114,9 @@
         }
     },
     "batch_size": 16,
-    "num_workers": 4
+    "num_workers": 12
   },
-  "gpus": "0",
+  "gpus": "",
   "num_epochs": 180,
   "project_name": "gml_harm_testing",
   "experiments_folder": "../diplom_exps"

@@ -125,6 +125,6 @@ def get_scheduler(optimizers: Dict[str, Optimizer],
         sched_type = getattr(torch.optim.lr_scheduler, sched_type_name)
         sched = sched_type(optimizer=optimizers[opt_name], **dct_params)
         scheds.update({opt_name: sched})
-        scheds_callbacks[opt_name] = dl.SchedulerCallback(mode=mode)
+        scheds_callbacks[opt_name] = dl.SchedulerCallback(mode=mode, scheduler_key=opt_name)
 
     return scheds, scheds_callbacks
