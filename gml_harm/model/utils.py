@@ -1,7 +1,7 @@
 from copy import copy
 from torch import nn
 
-from .unet import UNet
+from gml_harm.model.dih.unet import UNet
 
 
 def create_model(model_cfg) -> nn.Module:

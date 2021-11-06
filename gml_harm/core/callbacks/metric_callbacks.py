@@ -1,9 +1,7 @@
 from catalyst import dl
 from typing import Optional, Union, Iterable, Dict
 
-
-
-from ..metrics import MSEMetric, PSNRMetric, FNMSEMetric
+from ..metrics import MSEMetric, PSNRMetric, fMSEMetric, FNMSEMetric
 
 
 class MSECallback(dl.FunctionalBatchMetricCallback):
@@ -40,6 +38,25 @@ class PSNRCallback(dl.FunctionalBatchMetricCallback):
                               compute_on_call=compute_on_call,
                               metric_key=metric_key,
                               **kwargs),
+            input_key=input_key,
+            target_key=target_key,
+            log_on_batch=log_on_batch)
+
+
+class fMSECallback(dl.FunctionalBatchMetricCallback):
+    def __init__(self,
+                 input_key: Union[str, Iterable[str], Dict[str, str]],
+                 target_key: Union[str, Iterable[str], Dict[str, str]],
+                 metric_key: str,
+                 prefix: Optional[str] = None,
+                 suffix: Optional[str] = None,
+                 compute_on_call: bool = True,
+                 log_on_batch: bool = True):
+        super(fMSECallback, self).__init__(
+            metric=fMSEMetric(prefix=prefix,
+                               suffix=suffix,
+                               compute_on_call=compute_on_call,
+                               metric_key=metric_key),
             input_key=input_key,
             target_key=target_key,
             log_on_batch=log_on_batch)

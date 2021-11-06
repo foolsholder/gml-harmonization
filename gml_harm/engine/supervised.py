@@ -1,3 +1,4 @@
+import torch
 from albumentations import Compose
 from catalyst import dl
 from typing import Any, Mapping
@@ -29,6 +30,7 @@ class SupervisedTrainer(dl.Runner):
 
         if self.to_original_scale is not None:
             outputs_255 = self.to_original_scale.apply(outputs)
+            outputs_255 = torch.clip(outputs_255, 0, 255.)
             targets_255 = self.to_original_scale.apply(targets)
             self.batch.update({
                 'outputs_255': outputs_255,

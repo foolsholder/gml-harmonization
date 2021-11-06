@@ -3,7 +3,7 @@ import torch
 from catalyst import metrics
 from copy import copy
 
-from .functional import mse, psnr, fn_mse
+from .functional import mse, psnr, fmse, fn_mse
 
 
 class MSEMetric(metrics.FunctionalBatchMetric):
@@ -38,6 +38,18 @@ class PSNRMetric(metrics.FunctionalBatchMetric):
         value = self.metric_fn(*args, **kwargs)
         self.additive_metric.update(float(value), batch_size)
         return value
+
+
+class fMSEMetric(metrics.FunctionalBatchMetric):
+    def __init__(self, metric_key, **kwargs):
+        """
+        kwargs['target_key'] == 'targets_and_masks'
+        """
+        super(fMSEMetric, self).__init__(
+            metric_fn=fmse,
+            metric_key=metric_key,
+            **kwargs
+        )
 
 
 class FNMSEMetric(metrics.FunctionalBatchMetric):

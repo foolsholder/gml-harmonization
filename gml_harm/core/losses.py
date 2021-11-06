@@ -11,11 +11,6 @@ class MSE(nn.Module):
         return mse(outputs, targets)
 
 
-class PSNR(nn.Module):
-    def forward(self, outputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        return psnr(outputs, targets)
-
-
 class ForegroundNormalizedMSE(nn.Module):
     def __init__(self, min_area: float = 100.):
         super(ForegroundNormalizedMSE, self).__init__()

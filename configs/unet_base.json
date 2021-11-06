@@ -23,11 +23,11 @@
   "optimizers": {
     "AdamW": {
       "encoder": {
-        "lr": 5e-4,
+        "lr": 1e-3,
         "weight_decay": 1e-4
       },
       "decoder": {
-        "lr": 5e-4,
+        "lr": 1e-3,
         "weight_decay": 1e-4
       }
     }
@@ -35,34 +35,34 @@
   "metric_callbacks": [
     {
       "type": "MSECallback",
-      "input_key": "outputs",
-      "target_key": "targets",
-      "metric_key": "mse"
-    },
-    {
-      "type": "MSECallback",
       "input_key": "outputs_255",
       "target_key": "targets_255",
-      "metric_key": "mse_255"
+      "metric_key": "MSE_255"
     },
     {
       "type": "PSNRCallback",
       "input_key": "outputs_255",
       "target_key": "targets_255",
-      "metric_key": "psnr",
+      "metric_key": "PSNR_255",
       "max_pixel_value": 255
     },
     {
       "type": "FNMSECallback",
+      "input_key": "outputs",
+      "target_key": "targets_and_masks",
+      "metric_key": "FN-MSE",
+      "min_area": 100.0
+    },
+    {
+      "type": "fMSECallback",
       "input_key": "outputs_255",
       "target_key": "targets_and_masks_255",
-      "metric_key": "fn_mse_255",
-      "min_area": 100.0
+      "metric_key": "fMSE_255"
     }
   ],
   "optimizers_callbacks": [
     {
-      "metric_key": "mse",
+      "metric_key": "FN-MSE",
       "optimizer_key": "AdamW"
     }
   ],
@@ -70,7 +70,7 @@
     {
       "use": false,
       "loader_key": "valid",
-      "metric_key": "mse",
+      "metric_key": "FN-MSE",
       "minimize": true,
       "save_n_best": 1,
       "logdir": "somewhere"
@@ -100,7 +100,8 @@
           "scale": [0.5, 1]
         },
         "HorizontalFlip": {}
-      }
+      },
+      "keep_without_mask": 0.05
     },
     "test": {
         "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
@@ -112,7 +113,7 @@
         }
     },
     "batch_size": 16,
-    "num_workers": 8
+    "num_workers": 4
   },
   "gpus": "0",
   "num_epochs": 180,

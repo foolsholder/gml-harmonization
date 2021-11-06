@@ -13,7 +13,8 @@ from typing import Any, Dict, Union, List
 class BaseDataset(Dataset):
     def __init__(self,
                  augmentations: Compose = None,
-                 to_tensor_transforms: Compose = None) -> None:
+                 to_tensor_transforms: Compose = None,
+                 keep_without_mask: float = 0.) -> None:
         """
         default Compose.additional_targets = {
             'target': 'image'
@@ -26,6 +27,8 @@ class BaseDataset(Dataset):
 
         self.to_tensor_transforms = to_tensor_transforms
         self.dataset_samples: List[Any] = []
+
+        self.keep_without_mask = keep_without_mask
 
     # noinspection PyTypeChecker
     def __getitem__(self, idx: int) -> Dict[str, Union[np.array, torch.Tensor, str]]:
@@ -80,6 +83,8 @@ class BaseDataset(Dataset):
         return sample
 
     def check_augmented_sample(self, aug_output: Dict[str, np.array]) -> bool:
+        if self.keep_without_mask > 0. and np.random.rand() < self.keep_without_mask:
+            return True
         return aug_output['mask'].sum() > 1.0
 
 

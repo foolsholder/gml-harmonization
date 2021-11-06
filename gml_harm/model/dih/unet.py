@@ -2,9 +2,9 @@ import torch
 from torch import nn as nn
 from functools import partial
 
-from ..core.layer.base_block import ConvBlock
-from ..core.layer.ops import FeaturesConnector
-from ..core.layer.unet_block import *
+from gml_harm.core.layer.base_block import ConvBlock
+from gml_harm.core.layer.ops import FeaturesConnector
+from gml_harm.core.layer.unet_block import *
 
 
 class UNetEncoder(nn.Module):

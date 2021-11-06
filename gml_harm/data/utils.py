@@ -59,12 +59,12 @@ def get_dataset(data_cfg: Dict[str, Any], split: str, composed: bool = True) -> 
     dataset_paths = data_cfg['dataset_paths']
 
     if composed:
-        return ComposedDataset([HDataset(dataset_paths[name], split) for name in datasets],
+        return ComposedDataset([HDataset(dataset_paths[name], split, **dataset_cfg) for name in datasets],
                                augmentations=augmentations,
-                               to_tensor_transforms=to_tensor_transforms)
+                               to_tensor_transforms=to_tensor_transforms, **dataset_cfg)
     return HDataset(dataset_paths[datasets[0]], split,
                     augmentations=augmentations,
-                    to_tensor_transforms=to_tensor_transforms)
+                    to_tensor_transforms=to_tensor_transforms, **dataset_cfg)
 
 
 def get_dataloader(data_cfg: Dict[str, Any], train: bool = False) -> DataLoader:

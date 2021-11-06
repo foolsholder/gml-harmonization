@@ -13,6 +13,7 @@ from catalyst.dl import MetricAggregationCallback
 from ..core.callbacks.metric_callbacks import (
     MSECallback,
     PSNRCallback,
+    fMSECallback,
     FNMSECallback
 )
 
@@ -25,6 +26,7 @@ def get_metric_callbacks(metric_callbacks_cfg: List[Dict[str, str]]) -> Dict[str
         "MSECallback": MSECallback,
         "PSNRCallback": PSNRCallback,
         "FNMSECallback": FNMSECallback,
+        "fMSECallback": fMSECallback,
         "MetricAggregationCallback": MetricAggregationCallback
     }
 
