@@ -18,20 +18,22 @@ class HVQVAERunner(dl.Runner):
         reference_alpha = batch['reference_alpha']
         reference_beta = batch['reference_beta']
 
+        model = self.model.module
+
         content_quant_alpha, latent_loss_ca, \
-        content_feat_alpha = self.model.encode_content(content_alpha)
+        content_feat_alpha = model.encode_content(content_alpha)
         content_quant_beta, latent_loss_cb, \
-        content_feat_beta = self.model.encode_content(content_beta)
+        content_feat_beta = model.encode_content(content_beta)
 
         reference_quant_alpha, latent_loss_fa, \
-        reference_feat_alpha = self.model.encode_reference(reference_alpha)
+        reference_feat_alpha = model.encode_reference(reference_alpha)
         reference_quant_beta, latent_loss_fb, \
-        reference_feat_beta = self.model.encode_reference(reference_beta)
+        reference_feat_beta = model.encode_reference(reference_beta)
 
-        _, _, content_appearance_feat_alpha = self.model.encode_reference(content_alpha)
+        _, _, content_appearance_feat_alpha = model.encode_reference(content_alpha)
 
-        reconstruct_content_alpha = self.model.decode(content_alpha, reference_alpha)
-        harmonize_content_alpha = self.model.decode(content_alpha, reference_beta)
+        reconstruct_content_alpha = model.decode(content_quant_alpha, reference_quant_alpha)
+        harmonize_content_alpha = model.decode(content_quant_alpha, reference_quant_beta)
 
         latent_loss_content = latent_loss_ca + latent_loss_cb
         latent_loss_reference = latent_loss_fa + latent_loss_fb

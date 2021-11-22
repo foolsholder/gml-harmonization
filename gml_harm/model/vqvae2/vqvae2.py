@@ -2,7 +2,7 @@ import torch
 
 from torch import nn
 
-from vqvae_entities import Encoder, Decoder, Quantize
+from .vqvae_entities import Encoder, Decoder, Quantize
 
 
 class HVQVAE(nn.Module):

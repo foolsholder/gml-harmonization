@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-import distributed_helper as dist_fn
+import gml_harm.model.vqvae2.distributed_helper as dist_fn
 
 
 # Copyright 2018 The Sonnet Authors. All Rights Reserved.

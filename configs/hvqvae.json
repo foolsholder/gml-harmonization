@@ -85,6 +85,15 @@
     },
     {
       "type": "MetricAggregationCallback",
+      "metric_key": "latent_loss",
+      "metrics": {
+        "latent_loss_content": 1,
+        "latent_loss_reference": 1
+      },
+      "mode": "weighted_sum"
+    },
+    {
+      "type": "MetricAggregationCallback",
       "metric_key": "loss",
       "metrics": {
         "latent_loss": 1,
@@ -98,7 +107,7 @@
   ],
   "optimizers_callbacks": [
     {
-      "metric_key": "FN-MSE",
+      "metric_key": "loss",
       "optimizer_key": "AdamW"
     }
   ],
@@ -125,7 +134,8 @@
       "HCOCO": "../data/HCOCO",
       "HAdobe5k": "../data/HAdobe5k",
       "HFlickr": "../data/HFlickr",
-      "Hday2night": "../data/Hday2night"
+      "Hday2night": "../data/Hday2night",
+      "RealHM": "../data/RealHM"
     },
     "train": {
       "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
@@ -138,6 +148,11 @@
         "height": 256,
         "width": 256,
         "scale": [0.5, 1]
+      },
+      "additional_targets": {
+        "content_beta": "image",
+        "reference_beta": "image",
+        "reference_alpha": "image"
       }
     },
     "test": {
@@ -148,6 +163,10 @@
           "height": 256,
           "width": 256
         }
+      },
+      "additional_targets": {
+        "target": "image",
+        "reference_image": "image"
       }
     },
     "batch_size": 16,

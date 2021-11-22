@@ -13,7 +13,7 @@ from typing import Dict, Any, List,Type, Tuple, Union
 
 from .base_dataset import HDataset, ABCDataset
 from .compose_data import ComposedDataset
-from .ssh_dataset import SSHTrainDataset
+from .ssh_dataset import SSHTrainDataset, SSHTestDataset
 
 def get_ssh_crop(crop_cfg: Dict[str, Union[float, int]]) -> Compose:
     available_crop: Dict[str, Type[BasicTransform]] = {
@@ -23,16 +23,12 @@ def get_ssh_crop(crop_cfg: Dict[str, Union[float, int]]) -> Compose:
     crop_type = available_crop[crop_typename]
     crop = Compose(
         [crop_type(**crop_cfg)],
-        p=1.0,
-        additional_targets={
-            'reference_alpha': 'image',
-            'content_beta': 'image',
-            'reference_beta': 'image'
-        }
+        p=1.0
     )
     return crop
 
-def get_transform(augmentations_cfg: Dict[str, Dict[str, str]]) -> Tuple[Compose, Compose]:
+def get_transform(augmentations_cfg: Dict[str, Dict[str, str]],
+                  additional_targets: Dict[str, str]) -> Tuple[Compose, Compose]:
     """
     creates simple Sequential Composition of augmentations
     doesn't provide any opportunities to use Compose([..., Compose(...), ...])
@@ -43,9 +39,7 @@ def get_transform(augmentations_cfg: Dict[str, Dict[str, str]]) -> Tuple[Compose
             ToTensorV2()
         ],
         p=1.0,
-        additional_targets={
-            "target": "image"
-        }
+        additional_targets=additional_targets
     )
     augmentations_dict = {
         "Resize": Resize,
@@ -59,9 +53,7 @@ def get_transform(augmentations_cfg: Dict[str, Dict[str, str]]) -> Tuple[Compose
     augmentations = Compose(
         augmentations_list,
         p=1.0,
-        additional_targets={
-            "target": "image"
-        }
+        additional_targets=additional_targets
     )
     return augmentations, to_tensor_transforms
 
@@ -69,7 +61,8 @@ def get_transform(augmentations_cfg: Dict[str, Dict[str, str]]) -> Tuple[Compose
 def get_dataset(data_cfg: Dict[str, Any], split: str) -> Dataset:
     available_datasets: Dict[str, Type[ABCDataset]] = {
         'HDataset': HDataset,
-        'SSHTrainDataset': SSHTrainDataset
+        'SSHTrainDataset': SSHTrainDataset,
+        'SSHTestDataset': SSHTestDataset
     }
     dataset_cfg = data_cfg[split]
     dataset_cfg = copy(dataset_cfg)
@@ -79,8 +72,10 @@ def get_dataset(data_cfg: Dict[str, Any], split: str) -> Dataset:
     dataset_typename = dataset_cfg.pop('type')
     dataset_type = available_datasets[dataset_typename]
 
+    additional_targets: Dict[str, str] = dataset_cfg.pop('additional_targets')
+
     augmentations_cfg = dataset_cfg.pop('augmentations')
-    augmentations, to_tensor_transforms = get_transform(augmentations_cfg)
+    augmentations, to_tensor_transforms = get_transform(augmentations_cfg, additional_targets)
 
     dataset_paths = data_cfg['dataset_paths']
 
@@ -90,12 +85,12 @@ def get_dataset(data_cfg: Dict[str, Any], split: str) -> Dataset:
     if 'crop' in dataset_cfg:
         dataset_cfg['crop'] = get_ssh_crop(dataset_cfg['crop'])
 
-    datasets: List[ABCDataset] = []
+    builed_datasets: List[ABCDataset] = []
     for ds_name in datasets:
-        datasets.append(dataset_type.__init__(
-            dataset_paths[ds_name], **dataset_cfg
+        builed_datasets.append(dataset_type(
+            dataset_path=dataset_paths[ds_name], **dataset_cfg
         ))
-    return ComposedDataset(datasets)
+    return ComposedDataset(builed_datasets)
 
 
 def get_dataloader(data_cfg: Dict[str, Any], train: bool = False) -> DataLoader:
