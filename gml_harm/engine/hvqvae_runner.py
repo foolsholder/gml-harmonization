@@ -58,10 +58,10 @@ class HVQVAERunner(dl.Runner):
         }
 
     def handle_batch_valid(self, batch: Mapping[str, Any]) -> None:
-        content = batch['content']
-        reference = batch['reference']
+        content = batch['content_images']
+        reference = batch['reference_images']
         masks = batch['masks']
-        targets = batch['target']
+        targets = batch['targets']
 
         harm_content, latent_loss = self.model(content, reference)
         self.batch_metrics['latent_loss'] = latent_loss
