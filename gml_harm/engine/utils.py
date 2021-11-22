@@ -8,6 +8,7 @@ from typing import Dict, Any, Tuple, List, Callable
 
 from .supervised import SupervisedTrainer
 from .self_supervised import SelfSupervisedTrainer
+from .hvqvae_runner import HVQVAERunner
 
 from catalyst.dl import MetricAggregationCallback
 from ..core.callbacks.metric_callbacks import (
@@ -76,7 +77,8 @@ def create_trainer(trainer_cfg: Dict[str, str]) -> dl.Runner:
 
     trainers = {
         'SupervisedTrainer': SupervisedTrainer,
-        'SelfSupervisedTrainer': SelfSupervisedTrainer
+        'SelfSupervisedTrainer': SelfSupervisedTrainer,
+        'HVQVAERunner': HVQVAERunner
     }
     trainer_type = trainers[trainer_type_name]
 
