@@ -1,12 +1,11 @@
 from copy import copy
 from torch import nn
 
-from gml_harm.model.dih.unet import UNet
-
+from gml_harm.model.vqvae2 import HVQVAE
 
 def create_model(model_cfg) -> nn.Module:
     possible_models = {
-        'UNet': UNet
+        'HVQVAE': HVQVAE
     }
     model_cfg = copy(model_cfg)
     model_type_name = model_cfg.pop('type')
