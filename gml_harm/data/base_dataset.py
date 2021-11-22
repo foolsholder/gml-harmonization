@@ -3,6 +3,7 @@ import torch
 
 import numpy as np
 
+from abc import ABC, abstractmethod
 from albumentations import Compose
 from copy import copy
 from pathlib import Path
@@ -10,7 +11,17 @@ from torch.utils.data import Dataset
 from typing import Any, Dict, Union, List
 
 
-class BaseDataset(Dataset):
+class ABCDataset(ABC, Dataset):
+    @abstractmethod
+    def get_sample(self, idx: int) ->  Dict[str, Union[np.array, str]]:
+        raise "Not implemented yet"
+
+    @abstractmethod
+    def augment_sample(self, sample: Dict[str, Union[np.array, str]]) -> Dict[str, Union[np.array, str]]:
+        raise "Not implemented yet"
+
+
+class BaseDataset(ABCDataset):
     def __init__(self,
                  augmentations: Compose = None,
                  to_tensor_transforms: Compose = None,
@@ -48,9 +59,6 @@ class BaseDataset(Dataset):
         }
         out.update(sample_info_dict)
         return out
-
-    def get_sample(self, idx: int) -> Dict[str, Union[np.array, str]]:
-        raise "You should use HDataset"
 
     def check_sample_types(self, sample: Dict[str, Union[np.array, str]]) -> None:
         assert sample['image'].dtype == 'uint8'

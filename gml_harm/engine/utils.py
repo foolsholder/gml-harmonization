@@ -36,7 +36,7 @@ def get_metric_callbacks(metric_callbacks_cfg: List[Dict[str, str]]) -> Dict[str
 
         only_eval = False
         if 'only_eval' in callback_dct:
-            only_eval = callback_dct.pop('only_eval')
+            only_eval = callback_dct.pop('eval_only')
 
         callback_type = possible_callbacks[type_name]
         callback = callback_type(**callback_dct)
