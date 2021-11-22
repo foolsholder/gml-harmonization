@@ -58,7 +58,7 @@
       "input_key": "outputs_255",
       "target_key": "targets_and_masks_255",
       "metric_key": "fMSE_255",
-      "only_eval": true
+      "eval_only": true
     }
   ],
   "optimizers_callbacks": [
@@ -92,8 +92,22 @@
       "HFlickr": "../data/HFlickr",
       "Hday2night": "../data/Hday2night"
     },
+    "sshtrain": {
+      "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
+      "type": "SSHTrainDataset",
+      "augmentations": {
+        "HorizontalFlip": {}
+      },
+      "crop": {
+        "type": "RandomResizedCrop",
+        "height": 256,
+        "width": 256,
+        "scale": [0.5, 1]
+      }
+    },
     "train": {
       "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
+      "type": "HDataset",
       "augmentations": {
         "RandomResizedCrop": {
           "height": 256,
@@ -105,13 +119,14 @@
       "keep_without_mask": 0.05
     },
     "test": {
-        "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
-        "augmentations": {
-          "Resize": {
-            "height": 256,
-            "width": 256
-          }
+      "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
+      "type": "HDataset",
+      "augmentations": {
+        "Resize": {
+          "height": 256,
+          "width": 256
         }
+      }
     },
     "batch_size": 16,
     "num_workers": 12
