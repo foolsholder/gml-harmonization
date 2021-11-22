@@ -37,7 +37,7 @@ class SSHTrainDataset(ABCDataset):
         self.to_tensor_transform = to_tensor_transform
 
         self.LUT = LUT
-        images = self.dataset_path / 'images'
+        images = self.dataset_path / 'real_images'
         self.dataset_samples: List[Any] = list(images.glob('*.jpg'))
 
     def __len__(self) -> int:

@@ -1,0 +1,160 @@
+{
+  "model": {
+    "type": "HVQVAE"
+  },
+  "trainer": {
+    "type": "HVQVAERunner",
+    "restore_scale": true
+  },
+  "optimizers": {
+    "AdamW": {
+      "model": {
+        "lr": 1e-3,
+        "weight_decay": 1e-4
+      }
+    }
+  },
+  "metric_callbacks": [
+    {
+      "type": "MSECallback",
+      "input_key": "outputs_255",
+      "target_key": "targets_255",
+      "metric_key": "MSE_255",
+      "eval_only": true
+    },
+    {
+      "type": "PSNRCallback",
+      "input_key": "outputs_255",
+      "target_key": "targets_255",
+      "metric_key": "PSNR_255",
+      "max_pixel_value": 255,
+      "eval_only": true
+    },
+    {
+      "type": "FNMSECallback",
+      "input_key": "outputs",
+      "target_key": "targets_and_masks",
+      "metric_key": "FN-MSE",
+      "min_area": 100.0,
+      "eval_only": true
+    },
+    {
+      "type": "fMSECallback",
+      "input_key": "outputs_255",
+      "target_key": "targets_and_masks_255",
+      "metric_key": "fMSE_255",
+      "eval_only": true
+    },
+    {
+      "type": "MSECallback",
+      "input_key": "reconstruct_content_alpha",
+      "target_key": "content_alpha",
+      "metric_key": "reconstruction_loss",
+      "train_only": true
+    },
+    {
+      "type": "MSECallback",
+      "input_key": "harmonize_content_alpha",
+      "target_key": "content_beta",
+      "metric_key": "harmonization_loss",
+      "train_only": true
+    },
+    {
+      "type": "MSECallback",
+      "input_key": "content_feat_alpha",
+      "target_key": "content_feat_beta",
+      "metric_key": "content_consistency_loss",
+      "train_only": true
+    },
+    {
+      "type": "MSECallback",
+      "input_key": "reference_feat_alpha",
+      "target_key": "content_appearance_feat_alpha",
+      "metric_key": "reference_consistency_loss",
+      "train_only": true
+    },
+    {
+      "type": "MetricAggregationCallback",
+      "metric_key": "disentanglement_loss",
+      "metrics": {
+        "content_consistency_loss": 1,
+        "reference_consistency_loss": 1
+      },
+      "mode": "weighted_sum",
+      "train_only": true
+    },
+    {
+      "type": "MetricAggregationCallback",
+      "metric_key": "loss",
+      "metrics": {
+        "latent_loss": 1,
+        "reconstruction_loss": 0.4,
+        "harmonization_loss": 1,
+        "disentanglement_loss": 0.05
+      },
+      "mode": "weighted_sum",
+      "train_only": true
+    }
+  ],
+  "optimizers_callbacks": [
+    {
+      "metric_key": "FN-MSE",
+      "optimizer_key": "AdamW"
+    }
+  ],
+  "checkpoints_callbacks": [
+    {
+      "use": false,
+      "loader_key": "valid",
+      "metric_key": "PSNR_255",
+      "minimize": false,
+      "save_n_best": 1,
+      "logdir": "somewhere"
+    }
+  ],
+  "schedulers": {
+    "AdamW": {
+      "type": "MultiStepLR",
+      "milestones": [160, 175],
+      "gamma": 0.1,
+      "mode": "epoch"
+    }
+  },
+  "data": {
+    "dataset_paths": {
+      "HCOCO": "../data/HCOCO",
+      "HAdobe5k": "../data/HAdobe5k",
+      "HFlickr": "../data/HFlickr",
+      "Hday2night": "../data/Hday2night"
+    },
+    "train": {
+      "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
+      "type": "SSHTrainDataset",
+      "augmentations": {
+        "HorizontalFlip": {}
+      },
+      "crop": {
+        "type": "RandomResizedCrop",
+        "height": 256,
+        "width": 256,
+        "scale": [0.5, 1]
+      }
+    },
+    "test": {
+      "datasets": ["RealHM"],
+      "type": "SSHTestDataset",
+      "augmentations": {
+        "Resize": {
+          "height": 256,
+          "width": 256
+        }
+      }
+    },
+    "batch_size": 16,
+    "num_workers": 12
+  },
+  "gpus": "",
+  "num_epochs": 180,
+  "project_name": "gml_harm_testing",
+  "experiments_folder": "../diplom_exps"
+}

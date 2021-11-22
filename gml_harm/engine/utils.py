@@ -35,15 +35,23 @@ def get_metric_callbacks(metric_callbacks_cfg: List[Dict[str, str]]) -> Dict[str
         callback_dct = copy(callback_dct)
         type_name = callback_dct.pop('type')
 
-        only_eval = False
-        if 'only_eval' in callback_dct:
-            only_eval = callback_dct.pop('eval_only')
+        eval_only = False
+        if 'eval_only' in callback_dct:
+            eval_only = callback_dct.pop('eval_only')
+
+        train_only = False
+
+        if 'train_only' in callback_dct:
+            train_only = callback_dct.pop('train_only')
+
+        assert not (train_only and eval_only)
 
         callback_type = possible_callbacks[type_name]
         callback = callback_type(**callback_dct)
 
-        if only_eval:
-            callback = dl.ControlFlowCallback(callback, loaders='valid')
+        if eval_only or train_only:
+            loader = 'valid' if eval_only else 'train'
+            callback = dl.ControlFlowCallback(callback, loaders=loader)
 
         callbacks['metric_{}'.format(metric_idx + 1)] = callback
 
@@ -62,7 +70,10 @@ def get_optimizers(model: torch.nn.Module, optimizers_cfg: Dict[str, Dict[str, A
         opt_class = getattr(torch.optim, opt_name)
 
         for param_group_name, opt_params in opt_cfg.items():
-            param_group = getattr(model, param_group_name)
+            if param_group_name != 'model':
+                param_group = getattr(model, param_group_name)
+            else:
+                param_group = model
             group_params = {'params': param_group.parameters()}
             group_params.update(opt_params)
             opt_list_args += [group_params]
