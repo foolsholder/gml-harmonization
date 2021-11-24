@@ -4,6 +4,7 @@ from typing import Any, Mapping, Callable, Sequence
 
 from ..data.transforms import ToOriginalScale
 
+
 class HVQVAERunner(dl.Runner):
     def __init__(self, restore_scale=True):
         super(HVQVAERunner, self).__init__()
@@ -18,22 +19,24 @@ class HVQVAERunner(dl.Runner):
         reference_alpha = batch['reference_alpha']
         reference_beta = batch['reference_beta']
 
-        model = self.model.module
+        content_enc = self.model['content_encoder']
+        reference_enc = self.model['reference_encoder']
+        decoder = self.model['decoder']
 
         content_quant_alpha, latent_loss_ca, \
-        content_feat_alpha = model.encode_content(content_alpha)
+        content_feat_alpha = content_enc(content_alpha)
         content_quant_beta, latent_loss_cb, \
-        content_feat_beta = model.encode_content(content_beta)
+        content_feat_beta = content_enc(content_beta)
 
         reference_quant_alpha, latent_loss_fa, \
-        reference_feat_alpha = model.encode_reference(reference_alpha)
+        reference_feat_alpha = reference_enc(reference_alpha)
         reference_quant_beta, latent_loss_fb, \
-        reference_feat_beta = model.encode_reference(reference_beta)
+        reference_feat_beta = reference_enc(reference_beta)
 
-        _, _, content_appearance_feat_alpha = model.encode_reference(content_alpha)
+        _, _, content_appearance_feat_alpha = reference_enc(content_alpha)
 
-        reconstruct_content_alpha = model.decode(content_quant_alpha, reference_quant_alpha)
-        harmonize_content_alpha = model.decode(content_quant_alpha, reference_quant_beta)
+        reconstruct_content_alpha = decoder(content_quant_alpha, reference_quant_alpha)
+        harmonize_content_alpha = decoder(content_quant_alpha, reference_quant_beta)
 
         latent_loss_content = latent_loss_ca + latent_loss_cb
         latent_loss_reference = latent_loss_fa + latent_loss_fb
