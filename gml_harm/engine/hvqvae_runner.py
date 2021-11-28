@@ -42,8 +42,8 @@ class HVQVAERunner(dl.Runner):
         latent_loss_reference = latent_loss_fa + latent_loss_fb
 
         self.batch_metrics.update({
-            'latent_loss_content': latent_loss_content,
-            'latent_loss_reference': latent_loss_reference
+            'latent_loss_content': latent_loss_content.mean(),
+            'latent_loss_reference': latent_loss_reference.mean()
         })
 
         self.batch = {
@@ -68,7 +68,9 @@ class HVQVAERunner(dl.Runner):
         masks = batch['masks']
         targets = batch['targets']
 
-        harm_content, latent_loss = self.model(content, reference)
+        model = self.model['model']
+
+        harm_content, latent_loss = model(content, reference)
         self.batch_metrics['latent_loss'] = latent_loss
 
         outputs = content * masks + (1. - masks) * reference

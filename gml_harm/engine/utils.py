@@ -4,7 +4,7 @@ import torch
 from catalyst import dl
 from copy import copy
 from torch.optim import Optimizer
-from typing import Dict, Any, Tuple, List, Callable
+from typing import Dict, Any, Tuple, List, Callable, Union
 
 from .supervised import SupervisedTrainer
 from .self_supervised import SelfSupervisedTrainer
@@ -58,26 +58,40 @@ def get_metric_callbacks(metric_callbacks_cfg: List[Dict[str, str]]) -> Dict[str
     return callbacks
 
 
-def get_optimizers(model: torch.nn.Module, optimizers_cfg: Dict[str, Dict[str, Any]]) -> Dict[str, Optimizer]:
+def get_optimizers(model: Union[Dict[str, torch.nn.Module], torch.nn.Module],
+                   optimizers_cfg: Dict[str, Dict[str, Any]]) -> Dict[str, Optimizer]:
     """
     :param model: torch.nn.Module
     :param optimizers_cfg: Dict[opt_name, Dict[param_group, opt_params]]
     :return: Dict[str, Optimizer]
     """
     optimizers: Dict[str, Optimizer] = {}
-    for opt_name, opt_cfg in optimizers_cfg.items():
-        opt_list_args = []
-        opt_class = getattr(torch.optim, opt_name)
 
-        for param_group_name, opt_params in opt_cfg.items():
+    model_nn_instance = isinstance(model, torch.nn.Module)
+    model_dict_instance = isinstance(model, dict)
+
+    for opt_name, opt_cfg in optimizers_cfg.items():
+        opt_typename = opt_cfg.pop('type')
+        opt_class = getattr(torch.optim, opt_typename)
+
+        groups = opt_cfg.pop('groups')
+
+        for param_group in groups:
+            param_group_name = param_group['params']
             if param_group_name != 'model':
-                param_group = getattr(model, param_group_name)
-            else:
-                param_group = model
-            group_params = {'params': param_group.parameters()}
-            group_params.update(opt_params)
-            opt_list_args += [group_params]
-        optimizers[opt_name] = opt_class(opt_list_args)
+                if model_nn_instance:
+                    submodel = getattr(model, param_group_name)
+                else:
+                    assert model_dict_instance
+                    submodel = model[param_group_name]
+            elif param_group_name == 'model':
+                if not model_nn_instance:
+                    submodel = model['model']
+                else:
+                    submodel = model
+            param_group.update(dict(params=submodel.parameters()))
+
+        optimizers[opt_name] = opt_class(groups)
 
     return optimizers
 

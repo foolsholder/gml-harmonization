@@ -54,7 +54,35 @@ class HVQEncoder(nn.Module):
         enc_b = enc_b.view(batch_size, -1)
         enc_feat = torch.cat([enc_t, enc_b], dim=1)
 
-        return quant, diff_t + diff_b, enc_feat
+        diff = diff_b + diff_t
+
+        return quant, diff, enc_feat
+
+
+class HDecoder(nn.Module):
+    def __init__(
+            self,
+            out_channel=3,
+            channel=128,
+            n_res_block=2,
+            n_res_channel=32,
+            embed_dim=64
+    ):
+        super(HDecoder, self).__init__()
+
+        self.decoder = Decoder(
+            embed_dim + embed_dim + embed_dim + embed_dim,
+            out_channel,
+            channel,
+            n_res_block,
+            n_res_channel,
+            stride=4,
+        )
+
+    def forward(self, content_feats, reference_feats):
+        feats = torch.cat([content_feats, reference_feats], 1)
+        dec = self.decoder(feats)
+        return dec
 
 
 class HVQVAE(nn.Module):
@@ -74,7 +102,7 @@ class HVQVAE(nn.Module):
     ):
         super().__init__()
 
-        self.content_enc = HVQVAE(
+        self.content_encoder = HVQEncoder(
             in_channel=in_channel,
             channel=channel,
             n_res_block=n_res_block,
@@ -84,7 +112,7 @@ class HVQVAE(nn.Module):
             decay=decay,
         )
 
-        self.reference_enc = HVQVAE(
+        self.reference_encoder = HVQEncoder(
             in_channel=in_channel,
             channel=channel,
             n_res_block=n_res_block,
@@ -93,27 +121,21 @@ class HVQVAE(nn.Module):
             n_embed=n_embed,
             decay=decay,
         )
-
-        self.dec = Decoder(
-            embed_dim + embed_dim + embed_dim + embed_dim,
-            out_channel,
-            channel,
-            n_res_block,
-            n_res_channel,
-            stride=4,
+        self.decoder = HDecoder(
+            out_channel=out_channel,
+            channel=channel,
+            n_res_block=n_res_block,
+            n_res_channel=n_res_channel,
+            embed_dim=embed_dim,
         )
 
     def forward(self, content_input, reference_input):
         content_quant, reference_quant, diff = self.encode(content_input, reference_input)
-        dec = self.decode(content_quant, reference_quant)
+        dec = self.decoder(content_quant, reference_quant)
+        print(diff.shape, flush=True)
         return dec, diff
 
     def encode(self, content_input, reference_input):
-        content_quant, content_diff, _ = self.content_enc(content_input)
-        reference_quant, reference_diff, _ = self.reference_enc(reference_input)
+        content_quant, content_diff, _ = self.content_encoder(content_input)
+        reference_quant, reference_diff, _ = self.reference_encoder(reference_input)
         return content_quant, reference_quant, content_diff + reference_diff
-
-    def decode(self, content_quant, reference_quant):
-        quant = torch.cat([content_quant, reference_quant], 1)
-        dec = self.dec(quant)
-        return dec

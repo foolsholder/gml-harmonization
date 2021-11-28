@@ -1,17 +1,27 @@
 {
   "model": {
-    "type": "HVQVAE"
+    "type": "HVQVAE",
+    "format": "model+dict",
+    "model+dict": {
+      "content_encoder": "content_encoder",
+      "reference_encoder": "reference_encoder",
+      "decoder": "decoder"
+    }
   },
   "trainer": {
     "type": "HVQVAERunner",
     "restore_scale": true
   },
   "optimizers": {
-    "AdamW": {
-      "model": {
-        "lr": 1e-3,
-        "weight_decay": 1e-4
-      }
+    "model_optimizer": {
+      "type": "AdamW",
+      "groups": [
+        {
+          "params": "model",
+          "lr": 1e-3,
+          "weight_decay": 1e-4
+        }
+      ]
     }
   },
   "metric_callbacks": [
@@ -108,7 +118,8 @@
   "optimizers_callbacks": [
     {
       "metric_key": "loss",
-      "optimizer_key": "AdamW"
+      "model_key": "model",
+      "optimizer_key": "model_optimizer"
     }
   ],
   "checkpoints_callbacks": [
@@ -122,7 +133,7 @@
     }
   ],
   "schedulers": {
-    "AdamW": {
+    "model_optimizer": {
       "type": "MultiStepLR",
       "milestones": [160, 175],
       "gamma": 0.1,
@@ -147,7 +158,7 @@
         "type": "RandomResizedCrop",
         "height": 256,
         "width": 256,
-        "scale": [0.5, 1]
+        "scale": [0.3, 0.55]
       },
       "additional_targets": {
         "content_beta": "image",
