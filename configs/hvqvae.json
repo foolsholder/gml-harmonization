@@ -146,18 +146,19 @@
   ],
   "checkpoints_callbacks": [
     {
-      "use": false,
+      "use": true,
       "loader_key": "valid",
       "metric_key": "PSNR_255",
       "minimize": false,
       "save_n_best": 1,
-      "logdir": "somewhere"
+      "experiment_name": true,
+      "logdir": "../diplom_exps"
     }
   ],
   "schedulers": {
     "model_optimizer": {
       "type": "MultiStepLR",
-      "milestones": [160, 175],
+      "milestones": [42, 47],
       "gamma": 0.1,
       "mode": "epoch"
     }
@@ -203,7 +204,7 @@
           "b_shift_limit": 75
         },
         "CLAHE": {
-          "p": 1.0
+          "p": 0.5
         },
         "RandomBrightnessContrast" : {
           "p": 1.0,
@@ -218,6 +219,7 @@
         }
       },
       "crop": {
+        "PadIfNeeded": true,
         "type": "RandomCrop",
         "height": 256,
         "width": 256
@@ -242,11 +244,11 @@
         "reference_image": "image"
       }
     },
-    "batch_size": 16,
-    "num_workers": 12
+    "batch_size": 100,
+    "num_workers": 16
   },
   "gpus": "",
-  "num_epochs": 180,
-  "project_name": "gml_harm_testing",
+  "num_epochs": 50,
+  "project_name": "gml_harm",
   "experiments_folder": "../diplom_exps"
 }

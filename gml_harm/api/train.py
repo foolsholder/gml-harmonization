@@ -13,6 +13,9 @@ from ..data.utils import get_loaders
 
 
 def train_model(model, cfg: Dict[str, Any]):
+    project_name = cfg['project_name']
+    experiment_name = cfg['experiment_name']
+
     trainer = create_trainer(cfg['trainer'])
 
     opts = get_optimizers(model, cfg['optimizers'])
@@ -20,7 +23,10 @@ def train_model(model, cfg: Dict[str, Any]):
 
     metric_callbacks = get_metric_callbacks(cfg['metric_callbacks'])
 
-    checkpoints_callbacks = get_checkpoints_callbacks(cfg['checkpoints_callbacks'])
+    checkpoints_callbacks = get_checkpoints_callbacks(
+        cfg['checkpoints_callbacks'],
+        experiment_name
+    )
 
     all_callbacks = {}
     for callbacks_dict in [metric_callbacks, opts_callbacks, checkpoints_callbacks]:
@@ -32,9 +38,6 @@ def train_model(model, cfg: Dict[str, Any]):
     else:
         scheds = None
     loaders = get_loaders(cfg['data'])
-
-    project_name = cfg['project_name']
-    experiment_name = cfg['experiment_name']
 
     trainer.train(
         model=model,

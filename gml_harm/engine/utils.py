@@ -124,13 +124,20 @@ def get_optimizers_callbacks(optimizers_callbacks_cfg: List[Dict[str, Any]]) -> 
     return opt_callbacks
 
 
-def get_checkpoints_callbacks(checkpoints_cfg: List[Dict[str, Any]]) -> Dict[str, dl.CheckpointCallback]:
+def get_checkpoints_callbacks(
+        checkpoints_cfg: List[Dict[str, Any]],
+        experiment_name: str) -> Dict[str, dl.CheckpointCallback]:
     checkpoint_callbacks: Dict[str: dl.CheckpointCallback] = {}
     for chp_idx, params in enumerate(checkpoints_cfg):
         params = copy(params)
         use = params.pop('use')
         if not use:
             continue
+        use_exp_name = False
+        if 'experiment_name' in params:
+            use_exp_name = params.pop('experiment_name')
+        if use_exp_name:
+            params['logdir'] = params['logdir'] + '/' + experiment_name
         chp_callback = dl.CheckpointCallback(**params)
         checkpoint_callbacks['optimizer_{}'.format(chp_idx + 1)] = chp_callback
     return checkpoint_callbacks

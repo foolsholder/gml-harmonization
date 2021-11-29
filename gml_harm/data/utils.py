@@ -11,6 +11,7 @@ from albumentations import (
     HueSaturationValue,
     RandomBrightnessContrast,
     OpticalDistortion,
+    PadIfNeeded
 )
 
 from albumentations.pytorch import ToTensorV2
@@ -31,8 +32,18 @@ def get_ssh_crop(crop_cfg: Dict[str, Union[float, int]]) -> Compose:
     }
     crop_typename = crop_cfg.pop('type')
     crop_type = available_crop[crop_typename]
+
+    padd = False
+    if 'PadIfNeeded' in crop_cfg:
+        padd = crop_cfg.pop('PadIfNeeded')
+
+    crop_list: List[BasicTransform] = [crop_type(**crop_cfg)]
+
+    if padd:
+        crop_list = [PadIfNeeded(min_height=crop_cfg['height'], min_width=crop_cfg['width'])] + crop_list
+
     crop = Compose(
-        [crop_type(**crop_cfg)],
+        crop_list,
         p=1.0,
         additional_targets={
             'view_beta': 'image'
@@ -69,7 +80,8 @@ def get_augmentations(augmentations_cfg: Dict[str, Dict[str, str]],
         "RandomBrightnessContrast": RandomBrightnessContrast,
         "OpticalDistortion": OpticalDistortion,
         "IAAAffine2": IAAAffine2,
-        "IAAPerspective2": IAAPerspective2
+        "IAAPerspective2": IAAPerspective2,
+        "PadIfNeeded": PadIfNeeded
     }
     augmentations_list: List[BasicTransform] = []
     for aug_type_name, aug_params in augmentations_cfg.items():
@@ -104,7 +116,7 @@ def get_dataset(data_cfg: Dict[str, Any], split: str) -> Dataset:
 
     for aug_name in ['augmentations', 'geometric_augmentations', 'color_augmentations']:
         if aug_name in dataset_cfg:
-            augmentations_cfg = dataset_cfg.pop('aug_name')
+            augmentations_cfg = dataset_cfg.pop(aug_name)
             augmentations_dict[aug_name] = get_augmentations(augmentations_cfg, additional_targets)
 
     dataset_paths = data_cfg['dataset_paths']
