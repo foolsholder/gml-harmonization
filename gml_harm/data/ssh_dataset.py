@@ -18,10 +18,10 @@ class SSHTrainDataset(ABCDataset):
     def __init__(self,
                  dataset_path: str,
                  split: str = 'train',
-                 augmentations: Compose = None,
+                 geometric_augmentations: Compose = None,
+                 color_augmentations: Compose = None,
                  crop: Compose = None,
-                 to_tensor_transforms: Compose = None,
-                 LUT: LookUpTable = LookUpTable()):
+                 to_tensor_transforms: Compose = None):
         super(SSHTrainDataset, self).__init__()
 
         self.dataset_path = Path(dataset_path)
@@ -29,13 +29,12 @@ class SSHTrainDataset(ABCDataset):
         assert split == 'train'
         assert crop is not None
         assert to_tensor_transforms is not None
-        assert LUT is not None
 
-        self.augmentations = augmentations
+        self.geometric_augmentations = geometric_augmentations
+        self.color_augmentations = color_augmentations
         self.crop = crop
         self.to_tensor_transforms = to_tensor_transforms
 
-        self.LUT = LUT
         images = self.dataset_path
         self.dataset_samples: List[Any] = list(images.glob('*.jpg'))
 
@@ -44,8 +43,8 @@ class SSHTrainDataset(ABCDataset):
 
     def get_sample(self, idx) -> Dict[str, Union[np.array, str]]:
         image_path: Path = self.dataset_samples[idx]
-        image_path = str(image_path)
-        image: np.array = cv2.imread(image_path)
+        image_path_str = str(image_path)
+        image: np.array = cv2.imread(image_path_str)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         out: Dict[str, Union[np.array, str]] = {
@@ -55,20 +54,24 @@ class SSHTrainDataset(ABCDataset):
 
     def check_sample_types(self, sample: Dict[str, Union[np.array, str]]) -> None:
         assert sample['image'].dtype == 'uint8'
-        if 'target' in sample:
-            assert sample['target'].dtype == 'uint8'
 
     def __getitem__(self, idx) -> Dict[str, Union[torch.Tensor, np.array, str]]:
         sample = self.get_sample(idx)
         self.check_sample_types(sample)
-        sample = self.augment_sample(sample)
 
-        image = sample['image']
-        crop_content = self.crop(image=image)['image']
-        crop_reference = self.crop(image=image)['image']
+        view_alpha = self.color_augmentations(image=sample['image'])['image']
+        view_beta = self.color_augmentations(image=sample['image'])['image']
 
-        content_alpha, reference_alpha = self.LUT(crop_content, crop_reference)
-        content_beta, reference_beta = self.LUT(crop_content, crop_reference)
+        crop_content = self.crop(image=view_alpha, **{'view_beta': view_beta})
+        crop_reference = self.crop(image=view_alpha, **{'view_beta': view_beta})
+
+        crop_content = self.geometric_augmentations(
+            image=crop_content['image'],
+            **{'content_beta': crop_content['view_beta']}
+        )
+
+        content_alpha, content_beta = crop_content['image'], crop_content['content_beta']
+        reference_alpha, reference_beta = crop_reference['image'], crop_reference['view_beta']
 
         out = {
             'image': content_alpha,
@@ -82,11 +85,6 @@ class SSHTrainDataset(ABCDataset):
         out['content_alpha'] = content_alpha_tensor
 
         return out
-
-    def augment_sample(self, sample) -> Dict[str, Union[np.array, str]]:
-        if self.augmentations is not None:
-            sample.update(self.augmentations(image=sample['image']))
-        return sample
 
 
 class SSHTestDataset(ABCDataset):

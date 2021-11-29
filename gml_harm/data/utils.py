@@ -4,8 +4,15 @@ from albumentations import (
     Normalize,
     Resize,
     RandomResizedCrop,
-    HorizontalFlip
+    RandomCrop,
+    HorizontalFlip,
+    RGBShift,
+    CLAHE,
+    HueSaturationValue,
+    RandomBrightnessContrast,
+    OpticalDistortion,
 )
+
 from albumentations.pytorch import ToTensorV2
 from copy import copy
 from torch.utils.data import DataLoader, Dataset
@@ -14,25 +21,27 @@ from typing import Dict, Any, List,Type, Tuple, Union
 from .base_dataset import HDataset, ABCDataset
 from .compose_data import ComposedDataset
 from .ssh_dataset import SSHTrainDataset, SSHTestDataset
+from .transforms import IAAAffine2, IAAPerspective2
+
 
 def get_ssh_crop(crop_cfg: Dict[str, Union[float, int]]) -> Compose:
     available_crop: Dict[str, Type[BasicTransform]] = {
-        'RandomResizedCrop': RandomResizedCrop
+        'RandomResizedCrop': RandomResizedCrop,
+        'RandomCrop': RandomCrop
     }
     crop_typename = crop_cfg.pop('type')
     crop_type = available_crop[crop_typename]
     crop = Compose(
         [crop_type(**crop_cfg)],
-        p=1.0
+        p=1.0,
+        additional_targets={
+            'view_beta': 'image'
+        }
     )
     return crop
 
-def get_transform(augmentations_cfg: Dict[str, Dict[str, str]],
-                  additional_targets: Dict[str, str]) -> Tuple[Compose, Compose]:
-    """
-    creates simple Sequential Composition of augmentations
-    doesn't provide any opportunities to use Compose([..., Compose(...), ...])
-    """
+
+def get_to_tensor_transforms(additional_targets: Dict[str, str]) -> Compose:
     to_tensor_transforms: Compose = Compose(
         [
             Normalize(),
@@ -41,10 +50,26 @@ def get_transform(augmentations_cfg: Dict[str, Dict[str, str]],
         p=1.0,
         additional_targets=additional_targets
     )
+    return to_tensor_transforms
+
+
+def get_augmentations(augmentations_cfg: Dict[str, Dict[str, str]],
+                  additional_targets: Dict[str, str]) -> Compose:
+    """
+    creates simple Sequential Composition of augmentations
+    doesn't provide any opportunities to use Compose([..., Compose(...), ...])
+    """
     augmentations_dict = {
         "Resize": Resize,
         "RandomResizedCrop": RandomResizedCrop,
-        "HorizontalFlip": HorizontalFlip
+        "HorizontalFlip": HorizontalFlip,
+        "RGBShift": RGBShift,
+        "CLAHE": CLAHE,
+        "HueSaturationValue": HueSaturationValue,
+        "RandomBrightnessContrast": RandomBrightnessContrast,
+        "OpticalDistortion": OpticalDistortion,
+        "IAAAffine2": IAAAffine2,
+        "IAAPerspective2": IAAPerspective2
     }
     augmentations_list: List[BasicTransform] = []
     for aug_type_name, aug_params in augmentations_cfg.items():
@@ -55,7 +80,7 @@ def get_transform(augmentations_cfg: Dict[str, Dict[str, str]],
         p=1.0,
         additional_targets=additional_targets
     )
-    return augmentations, to_tensor_transforms
+    return augmentations
 
 
 def get_dataset(data_cfg: Dict[str, Any], split: str) -> Dataset:
@@ -74,13 +99,17 @@ def get_dataset(data_cfg: Dict[str, Any], split: str) -> Dataset:
 
     additional_targets: Dict[str, str] = dataset_cfg.pop('additional_targets')
 
-    augmentations_cfg = dataset_cfg.pop('augmentations')
-    augmentations, to_tensor_transforms = get_transform(augmentations_cfg, additional_targets)
+    augmentations_dict: Dict[str, Compose] = {}
+    augmentations_dict['to_tensor_transforms'] = get_to_tensor_transforms(additional_targets)
+
+    for aug_name in ['augmentations', 'geometric_augmentations', 'color_augmentations']:
+        if aug_name in dataset_cfg:
+            augmentations_cfg = dataset_cfg.pop('aug_name')
+            augmentations_dict[aug_name] = get_augmentations(augmentations_cfg, additional_targets)
 
     dataset_paths = data_cfg['dataset_paths']
 
-    dataset_cfg['augmentations'] = augmentations
-    dataset_cfg['to_tensor_transforms'] = to_tensor_transforms
+    dataset_cfg.update(augmentations_dict)
     dataset_cfg['split'] = split
     if 'crop' in dataset_cfg:
         dataset_cfg['crop'] = get_ssh_crop(dataset_cfg['crop'])
