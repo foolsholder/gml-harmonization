@@ -1,5 +1,3 @@
-import glob
-
 import cv2
 import torch
 
@@ -10,6 +8,7 @@ from copy import copy
 from pathlib import Path
 from torch.utils.data import Dataset
 from typing import Any, Dict, Union, List, Callable
+from skimage import io
 
 from .base_dataset import ABCDataset
 from.transforms import LookUpTable
@@ -37,7 +36,7 @@ class SSHTrainDataset(ABCDataset):
         self.to_tensor_transforms = to_tensor_transforms
 
         self.LUT = LUT
-        images = self.dataset_path / 'real_images'
+        images = self.dataset_path
         self.dataset_samples: List[Any] = list(images.glob('*.jpg'))
 
     def __len__(self) -> int:
@@ -104,10 +103,10 @@ class SSHTestDataset(ABCDataset):
         assert to_tensor_transforms is not None
 
         self.augmentations = augmentations
-        self.to_tensor_transform = to_tensor_transforms
+        self.to_tensor_transforms = to_tensor_transforms
 
         self.content_images = self.dataset_path / 'content_images'
-        self.reference_images = self.dataset_path / 'reference_image'
+        self.reference_images = self.dataset_path / 'reference_images'
         self.gt_images = self.dataset_path / 'harmonized_images'
         self.masks = self.dataset_path / 'ssh_masks'
         self.dataset_samples: List[Any] = list(self.content_images.glob('*.jpg'))
@@ -132,7 +131,7 @@ class SSHTestDataset(ABCDataset):
         content_image = self._imread(content_image_path, bgr2rgb=True)
         reference_image = self._imread(reference_image_path, bgr2rgb=True)
         gt_image = self._imread(gt_image_path, bgr2rgb=True)
-        mask = self._imread(mask_path, bgr2rgb=False)
+        mask = self._imread(mask_path, bgr2rgb=False)[:, :, 0].astype(np.float32) / 255.
 
         out: Dict[str, Union[np.array, str]] = {
             'image': content_image,
@@ -156,7 +155,7 @@ class SSHTestDataset(ABCDataset):
         out = {
             'content_images': sample['image'],
             'reference_images': sample['reference_image'],
-            'masks': sample['mask'],
+            'masks': sample['mask'][None, :, :],
             'targets': sample['target']
         }
 
@@ -164,5 +163,5 @@ class SSHTestDataset(ABCDataset):
 
     def augment_sample(self, sample) -> Dict[str, Union[np.array, str]]:
         if self.augmentations is not None:
-            sample.update(self.augmentations(**sample['image']))
+            sample.update(self.augmentations(**sample))
         return sample

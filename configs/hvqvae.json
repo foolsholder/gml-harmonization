@@ -94,13 +94,35 @@
       "train_only": true
     },
     {
+      "type": "IdentityCallback",
+      "input_key": "latent_loss_content",
+      "target_key": "latent_loss_content",
+      "metric_key": "latent_loss_content",
+      "train_only": true
+    },
+    {
+      "type": "IdentityCallback",
+      "input_key": "latent_loss_reference",
+      "target_key": "latent_loss_reference",
+      "metric_key": "latent_loss_reference",
+      "train_only": true
+    },
+    {
+      "type": "IdentityCallback",
+      "input_key": "latent_loss",
+      "target_key": "latent_loss",
+      "metric_key": "latent_loss",
+      "eval_only": true
+    },
+    {
       "type": "MetricAggregationCallback",
       "metric_key": "latent_loss",
       "metrics": {
         "latent_loss_content": 1,
         "latent_loss_reference": 1
       },
-      "mode": "weighted_sum"
+      "mode": "weighted_sum",
+      "train_only": true
     },
     {
       "type": "MetricAggregationCallback",
@@ -143,13 +165,14 @@
   "data": {
     "dataset_paths": {
       "HCOCO": "../data/HCOCO",
-      "HAdobe5k": "../data/HAdobe5k",
+      "HAdobe5k": "../data/HAdobe5k_resized1024",
       "HFlickr": "../data/HFlickr",
       "Hday2night": "../data/Hday2night",
-      "RealHM": "../data/RealHM"
+      "RealHM": "../data/RealHM_resized1024",
+      "MSCOCO": "../data/MSCOCO/train/data"
     },
     "train": {
-      "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
+      "datasets": ["MSCOCO"],
       "type": "SSHTrainDataset",
       "augmentations": {
         "HorizontalFlip": {}

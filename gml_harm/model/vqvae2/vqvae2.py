@@ -132,7 +132,6 @@ class HVQVAE(nn.Module):
     def forward(self, content_input, reference_input):
         content_quant, reference_quant, diff = self.encode(content_input, reference_input)
         dec = self.decoder(content_quant, reference_quant)
-        print(diff.shape, flush=True)
         return dec, diff
 
     def encode(self, content_input, reference_input):
