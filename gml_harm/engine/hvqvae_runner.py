@@ -41,11 +41,6 @@ class HVQVAERunner(dl.Runner):
         latent_loss_content = latent_loss_ca + latent_loss_cb
         latent_loss_reference = latent_loss_fa + latent_loss_fb
 
-        self.batch_metrics.update({
-            'latent_loss_content': latent_loss_content.mean(),
-            'latent_loss_reference': latent_loss_reference.mean()
-        })
-
         self.batch = {
             'content_alpha': content_alpha,
             'content_beta': content_beta,
@@ -59,7 +54,10 @@ class HVQVAERunner(dl.Runner):
             'reference_feat_alpha': reference_feat_alpha,
             'reference_feat_beta': reference_feat_beta,
 
-            'content_appearance_feat_alpha': content_appearance_feat_alpha
+            'content_appearance_feat_alpha': content_appearance_feat_alpha,
+
+            'latent_loss_content': latent_loss_content.mean(),
+            'latent_loss_reference': latent_loss_reference.mean()
         }
 
     def handle_batch_valid(self, batch: Mapping[str, Any]) -> None:
@@ -71,7 +69,6 @@ class HVQVAERunner(dl.Runner):
         model = self.model['model']
 
         harm_content, latent_loss = model(content, reference)
-        self.batch_metrics['latent_loss'] = latent_loss
 
         outputs = content * masks + (1. - masks) * reference
 
@@ -79,7 +76,8 @@ class HVQVAERunner(dl.Runner):
             'outputs': outputs,
             'targets': targets,
             'masks': masks,
-            'targets_and_masks': (targets, masks)
+            'targets_and_masks': (targets, masks),
+            'latent_loss': latent_loss.mean()
         }
 
         if self.to_original_scale is not None:

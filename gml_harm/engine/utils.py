@@ -15,7 +15,8 @@ from ..core.callbacks.metric_callbacks import (
     MSECallback,
     PSNRCallback,
     fMSECallback,
-    FNMSECallback
+    FNMSECallback,
+    IdentityCallback
 )
 
 
@@ -28,6 +29,7 @@ def get_metric_callbacks(metric_callbacks_cfg: List[Dict[str, str]]) -> Dict[str
         "PSNRCallback": PSNRCallback,
         "FNMSECallback": FNMSECallback,
         "fMSECallback": fMSECallback,
+        "IdentityCallback": IdentityCallback,
         "MetricAggregationCallback": MetricAggregationCallback
     }
 

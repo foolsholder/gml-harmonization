@@ -6,6 +6,15 @@ from copy import copy
 from .functional import mse, psnr, fmse, fn_mse
 
 
+class IdentityMetric(metrics.FunctionalBatchMetric):
+    def __init__(self, metric_key, **kwargs):
+        super(IdentityMetric, self).__init__(
+            metric_fn=lambda x, y: x,
+            metric_key=metric_key,
+            **kwargs
+        )
+
+
 class MSEMetric(metrics.FunctionalBatchMetric):
     def __init__(self, metric_key, **kwargs):
         super(MSEMetric, self).__init__(
