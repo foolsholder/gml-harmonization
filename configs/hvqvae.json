@@ -128,10 +128,10 @@
       "type": "MetricAggregationCallback",
       "metric_key": "loss",
       "metrics": {
-        "latent_loss": 1,
+        "latent_loss": 1.0,
         "reconstruction_loss": 0.4,
         "harmonization_loss": 1,
-        "disentanglement_loss": 1
+        "disentanglement_loss": 0.05
       },
       "mode": "weighted_sum",
       "train_only": true
@@ -185,8 +185,8 @@
           "scale": [0.0, 0.06]
         },
         "IAAAffine2": {
-          "scale" : [0.3, 1.2],
-          "rotate" : [-40, 40],
+          "scale" : [0.8, 1.0],
+          "rotate" : [-35, 35],
           "shear": [-0.1, 0.1],
           "p": 1.0
         },
@@ -195,6 +195,10 @@
         }
       },
       "color_augmentations": {
+        "Resize": {
+          "height": 640,
+          "width": 640
+        },
         "RGBShift": {
           "p": 1.0,
           "r_shift_limit": 75,

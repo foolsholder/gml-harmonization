@@ -4,6 +4,7 @@ from typing import Dict, Any
 
 from gml_harm.model.vqvae2.vqvae2 import HVQVAE
 
+
 def create_model(model_cfg: Dict[str, Any]) -> nn.Module:
     possible_models = {
         'HVQVAE': HVQVAE

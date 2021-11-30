@@ -145,7 +145,8 @@ def get_dataloader(data_cfg: Dict[str, Any], train: bool = False) -> DataLoader:
                              num_workers=num_workers,
                              batch_size=batch_size,
                              shuffle=train,
-                             drop_last=train)
+                             drop_last=train,
+                             pin_memory=True)
     return data_loader
 
 
