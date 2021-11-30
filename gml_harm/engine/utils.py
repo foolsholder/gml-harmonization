@@ -10,7 +10,7 @@ from .supervised import SupervisedTrainer
 from .self_supervised import SelfSupervisedTrainer
 from .hvqvae_runner import HVQVAERunner
 
-from catalyst.dl import MetricAggregationCallback
+from catalyst.dl import MetricAggregationCallback, CriterionCallback
 from ..core.callbacks.metric_callbacks import (
     MSECallback,
     PSNRCallback,
@@ -18,6 +18,22 @@ from ..core.callbacks.metric_callbacks import (
     FNMSECallback,
     IdentityCallback
 )
+
+from ..core.criterions import MSECriterion, PSNRCriterion, fMSECriterion
+
+
+def get_criterions(criterion_cfg: ORDType[str, ORDType[str, str]]) -> ORDType[str, torch.nn.Module]:
+    possible_criterions: Dict[str, torch.nn.Module] = {
+        "MSECriterion": MSECriterion,
+        "PSNRCriterion": PSNRCriterion,
+        "fMSECriterion": fMSECriterion
+    }
+    crits: ORDType[str, torch.nn.Module] = OrderedDict()
+    for crit_name, crit_params in criterion_cfg.items():
+        crit_typename = crit_params.pop('type')
+        crit_type = possible_criterions[crit_typename]
+        crits[crit_name] = crit_type(**crit_params)
+    return crits
 
 
 def get_metric_callbacks(
@@ -27,6 +43,7 @@ def get_metric_callbacks(
 
     # noinspection PyTypeChecker
     possible_callbacks: Dict[str, Callable[[Any], dl.Callback]] = {
+        "CriterionCallback": CriterionCallback,
         "MSECallback": MSECallback,
         "PSNRCallback": PSNRCallback,
         "FNMSECallback": FNMSECallback,

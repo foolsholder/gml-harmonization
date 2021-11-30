@@ -6,6 +6,7 @@ from ..engine.utils import (
     create_trainer,
     get_metric_callbacks,
     get_optimizers,
+    get_criterions,
     get_optimizers_callbacks,
     get_checkpoints_callbacks,
     get_scheduler
@@ -22,7 +23,7 @@ def train_model(model, cfg: Dict[str, Any]):
 
     opts = get_optimizers(model, cfg['optimizers'])
     opts_callbacks = get_optimizers_callbacks(cfg['optimizers_callbacks'])
-
+    crits = get_criterions(cfg['criterions'])
     metric_callbacks = get_metric_callbacks(cfg['metric_callbacks'])
 
     checkpoints_callbacks = get_checkpoints_callbacks(
@@ -45,7 +46,7 @@ def train_model(model, cfg: Dict[str, Any]):
         model=model,
         optimizer=opts,
         scheduler=scheds,
-        criterion=None,
+        criterion=crits,
         loaders=loaders,
         valid_loader='valid',
         num_epochs=cfg['num_epochs'],

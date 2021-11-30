@@ -24,63 +24,73 @@
       ]
     }
   },
+  "criterions": {
+    "MSE": {
+      "type": "MSECriterion"
+    },
+    "PSNR_255": {
+      "type": "PSNRCriterion",
+      "max_pixel_value": 255.0
+    },
+    "fMSE": {
+      "type": "fMSECriterion"
+    }
+  },
   "metric_callbacks": [
     {
-      "type": "MSECallback",
+      "type": "CriterionCallback",
       "input_key": "outputs_255",
       "target_key": "targets_255",
       "metric_key": "MSE_255",
+      "criterion_key": "MSE",
       "eval_only": true
     },
     {
-      "type": "PSNRCallback",
+      "type": "CriterionCallback",
       "input_key": "outputs_255",
       "target_key": "targets_255",
       "metric_key": "PSNR_255",
-      "max_pixel_value": 255,
+      "criterion_key": "PSNR_255",
       "eval_only": true
     },
     {
-      "type": "FNMSECallback",
-      "input_key": "outputs",
-      "target_key": "targets_and_masks",
-      "metric_key": "FN-MSE",
-      "min_area": 100.0,
-      "eval_only": true
-    },
-    {
-      "type": "fMSECallback",
+      "type": "CriterionCallback",
       "input_key": "outputs_255",
       "target_key": "targets_and_masks_255",
       "metric_key": "fMSE_255",
+      "criterion_key": "fMSE",
       "eval_only": true
     },
     {
-      "type": "MSECallback",
+      "type": "CriterionCallback",
       "input_key": "reconstruct_content_alpha",
       "target_key": "content_alpha",
       "metric_key": "reconstruction_loss",
+      "criterion_key": "MSE",
       "train_only": true
     },
     {
-      "type": "MSECallback",
+      "type": "CriterionCallback",
       "input_key": "harmonize_content_alpha",
       "target_key": "content_beta",
       "metric_key": "harmonization_loss",
+      "criterion_key": "MSE",
       "train_only": true
     },
     {
-      "type": "MSECallback",
+      "type": "CriterionCallback",
       "input_key": "content_feat_alpha",
       "target_key": "content_feat_beta",
       "metric_key": "content_consistency_loss",
+      "criterion_key": "MSE",
       "train_only": true
     },
     {
-      "type": "MSECallback",
+      "type": "CriterionCallback",
       "input_key": "reference_feat_alpha",
       "target_key": "content_appearance_feat_alpha",
       "metric_key": "reference_consistency_loss",
+      "criterion_key": "MSE",
       "train_only": true
     },
     {
