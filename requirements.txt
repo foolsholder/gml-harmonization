@@ -2,5 +2,6 @@ catalyst
 torch
 typing
 albumentations
+imgaug
 numpy
 opencv-python

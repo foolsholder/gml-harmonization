@@ -16,10 +16,6 @@ class ABCDataset(ABC, Dataset):
     def get_sample(self, idx: int) ->  Dict[str, Union[np.array, str]]:
         raise "Not implemented yet"
 
-    @abstractmethod
-    def augment_sample(self, sample: Dict[str, Union[np.array, str]]) -> Dict[str, Union[np.array, str]]:
-        raise "Not implemented yet"
-
 
 class BaseDataset(ABCDataset):
     def __init__(self,

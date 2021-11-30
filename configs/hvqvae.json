@@ -1,0 +1,266 @@
+{
+  "model": {
+    "type": "HVQVAE",
+    "format": "model+dict",
+    "model+dict": {
+      "content_encoder": "content_encoder",
+      "reference_encoder": "reference_encoder",
+      "decoder": "decoder"
+    }
+  },
+  "trainer": {
+    "type": "HVQVAERunner",
+    "restore_scale": true
+  },
+  "optimizers": {
+    "model_optimizer": {
+      "type": "AdamW",
+      "groups": [
+        {
+          "params": "model",
+          "lr": 1e-3,
+          "weight_decay": 1e-4
+        }
+      ]
+    }
+  },
+  "criterions": {
+    "MSE": {
+      "type": "MSECriterion"
+    },
+    "PSNR_255": {
+      "type": "PSNRCriterion",
+      "max_pixel_value": 255.0
+    },
+    "fMSE": {
+      "type": "fMSECriterion"
+    }
+  },
+  "metric_callbacks": [
+    {
+      "type": "CriterionCallback",
+      "input_key": "outputs_255",
+      "target_key": "targets_255",
+      "metric_key": "MSE_255",
+      "criterion_key": "MSE",
+      "eval_only": true
+    },
+    {
+      "type": "CriterionCallback",
+      "input_key": "outputs_255",
+      "target_key": "targets_255",
+      "metric_key": "PSNR_255",
+      "criterion_key": "PSNR_255",
+      "eval_only": true
+    },
+    {
+      "type": "CriterionCallback",
+      "input_key": "outputs_255",
+      "target_key": "targets_and_masks_255",
+      "metric_key": "fMSE_255",
+      "criterion_key": "fMSE",
+      "eval_only": true
+    },
+    {
+      "type": "CriterionCallback",
+      "input_key": "reconstruct_content_alpha",
+      "target_key": "content_alpha",
+      "metric_key": "reconstruction_loss",
+      "criterion_key": "MSE",
+      "train_only": true
+    },
+    {
+      "type": "CriterionCallback",
+      "input_key": "harmonize_content_alpha",
+      "target_key": "content_beta",
+      "metric_key": "harmonization_loss",
+      "criterion_key": "MSE",
+      "train_only": true
+    },
+    {
+      "type": "CriterionCallback",
+      "input_key": "content_feat_alpha",
+      "target_key": "content_feat_beta",
+      "metric_key": "content_consistency_loss",
+      "criterion_key": "MSE",
+      "train_only": true
+    },
+    {
+      "type": "CriterionCallback",
+      "input_key": "reference_feat_alpha",
+      "target_key": "content_appearance_feat_alpha",
+      "metric_key": "reference_consistency_loss",
+      "criterion_key": "MSE",
+      "train_only": true
+    },
+    {
+      "type": "MetricAggregationCallback",
+      "metric_key": "disentanglement_loss",
+      "metrics": {
+        "content_consistency_loss": 1,
+        "reference_consistency_loss": 1
+      },
+      "mode": "weighted_sum",
+      "train_only": true
+    },
+    {
+      "type": "IdentityCallback",
+      "input_key": "latent_loss_content",
+      "target_key": "latent_loss_content",
+      "metric_key": "latent_loss_content",
+      "train_only": true
+    },
+    {
+      "type": "IdentityCallback",
+      "input_key": "latent_loss_reference",
+      "target_key": "latent_loss_reference",
+      "metric_key": "latent_loss_reference",
+      "train_only": true
+    },
+    {
+      "type": "IdentityCallback",
+      "input_key": "latent_loss",
+      "target_key": "latent_loss",
+      "metric_key": "latent_loss",
+      "eval_only": true
+    },
+    {
+      "type": "MetricAggregationCallback",
+      "metric_key": "latent_loss",
+      "metrics": {
+        "latent_loss_content": 1,
+        "latent_loss_reference": 1
+      },
+      "mode": "weighted_sum",
+      "train_only": true
+    },
+    {
+      "type": "MetricAggregationCallback",
+      "metric_key": "loss",
+      "metrics": {
+        "latent_loss": 1.0,
+        "reconstruction_loss": 0.4,
+        "harmonization_loss": 1,
+        "disentanglement_loss": 0.05
+      },
+      "mode": "weighted_sum",
+      "train_only": true
+    }
+  ],
+  "optimizers_callbacks": [
+    {
+      "metric_key": "loss",
+      "model_key": "model",
+      "optimizer_key": "model_optimizer"
+    }
+  ],
+  "checkpoints_callbacks": [
+    {
+      "use": true,
+      "loader_key": "valid",
+      "metric_key": "PSNR_255",
+      "minimize": false,
+      "save_n_best": 1
+    }
+  ],
+  "schedulers": {
+    "model_optimizer": {
+      "type": "MultiStepLR",
+      "milestones": [42, 47],
+      "gamma": 0.1,
+      "mode": "epoch"
+    }
+  },
+  "data": {
+    "dataset_paths": {
+      "HCOCO": "../data/HCOCO",
+      "HAdobe5k": "../data/HAdobe5k_resized1024",
+      "HFlickr": "../data/HFlickr",
+      "Hday2night": "../data/Hday2night",
+      "RealHM": "../data/RealHM_resized1024",
+
+      "MSCOCO": "../data/MSCOCO/train/data",
+      "UnsplashLite": "../data/UnsplashLite/data",
+      "UnsplashFull": ""
+    },
+    "train": {
+      "datasets": ["MSCOCO"],
+      "type": "SSHTrainDataset",
+      "geometric_augmentations": {
+        "HorizontalFlip": {
+          "p": 0.5
+        },
+        "IAAPerspective2": {
+          "p": 1.0,
+          "scale": [0.0, 0.06]
+        },
+        "IAAAffine2": {
+          "scale" : [0.8, 1.0],
+          "rotate" : [-35, 35],
+          "shear": [-0.1, 0.1],
+          "p": 1.0
+        },
+        "OpticalDistortion": {
+          "p": 0.5
+        }
+      },
+      "color_augmentations": {
+        "Resize": {
+          "height": 640,
+          "width": 640
+        },
+        "RGBShift": {
+          "p": 1.0,
+          "r_shift_limit": 75,
+          "g_shift_limit": 75,
+          "b_shift_limit": 75
+        },
+        "CLAHE": {
+          "p": 0.5
+        },
+        "RandomBrightnessContrast" : {
+          "p": 1.0,
+          "brightness_limit": 0.3,
+          "contrast_limit": 0.3
+        },
+        "HueSaturationValue": {
+          "p": 1.0,
+          "hue_shift_limit": 25,
+          "sat_shift_limit": 50,
+          "val_shift_limit": 20
+        }
+      },
+      "crop": {
+        "PadIfNeeded": true,
+        "type": "RandomCrop",
+        "height": 256,
+        "width": 256
+      },
+      "additional_targets": {
+        "content_beta": "image",
+        "reference_beta": "image",
+        "reference_alpha": "image"
+      }
+    },
+    "test": {
+      "datasets": ["RealHM"],
+      "type": "SSHTestDataset",
+      "augmentations": {
+        "Resize": {
+          "height": 256,
+          "width": 256
+        }
+      },
+      "additional_targets": {
+        "target": "image",
+        "reference_image": "image"
+      }
+    },
+    "batch_size": 100,
+    "num_workers": 16
+  },
+  "gpus": "",
+  "num_epochs": 50,
+  "project_name": "gml_harm",
+  "experiments_folder": "../diplom_exps"
+}
