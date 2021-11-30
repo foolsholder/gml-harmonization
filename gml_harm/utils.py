@@ -2,6 +2,7 @@ from json import load, dump
 from pathlib import Path
 from collections import OrderedDict
 
+
 def init_experiment(args):
     config_path = args.config
 
@@ -9,7 +10,9 @@ def init_experiment(args):
         cfg = load(config_file, object_pairs_hook=OrderedDict)
 
     cfg['experiment_name'] = args.exp_name
-    exp_folder = Path(cfg['experiments_folder']) / args.exp_name
+    experiment_folder = Path(cfg['experiments_folder'] + '/' + args.exp_name)
+    cfg['experiments_folder'] = str(experiment_folder)
+    exp_folder = experiment_folder
     exp_folder.mkdir(exist_ok=True)
 
     if args.batch_size != -1:
@@ -18,6 +21,6 @@ def init_experiment(args):
         cfg['data']['num_workers'] = args.num_workers
 
     with open(exp_folder / 'config.json', 'w') as config_out:
-        dump(cfg, config_out, object_pairs_hook=OrderedDict)
+        dump(cfg, config_out)
 
     return cfg

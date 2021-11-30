@@ -131,7 +131,7 @@
         "latent_loss": 1,
         "reconstruction_loss": 0.4,
         "harmonization_loss": 1,
-        "disentanglement_loss": 0.05
+        "disentanglement_loss": 1
       },
       "mode": "weighted_sum",
       "train_only": true
@@ -150,9 +150,7 @@
       "loader_key": "valid",
       "metric_key": "PSNR_255",
       "minimize": false,
-      "save_n_best": 1,
-      "experiment_name": true,
-      "logdir": "../diplom_exps"
+      "save_n_best": 1
     }
   ],
   "schedulers": {

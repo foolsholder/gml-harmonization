@@ -18,7 +18,7 @@ from albumentations.pytorch import ToTensorV2
 from collections import OrderedDict
 from copy import copy
 from torch.utils.data import DataLoader, Dataset
-from typing import Dict, Any, List,Type, Tuple, Union
+from typing import Dict, Any, List,Type, Tuple, Union, OrderedDict as ORDType
 
 from .base_dataset import HDataset, ABCDataset
 from .compose_data import ComposedDataset
@@ -149,8 +149,8 @@ def get_dataloader(data_cfg: Dict[str, Any], train: bool = False) -> DataLoader:
     return data_loader
 
 
-def get_loaders(data_cfg: OrderedDict[str, Any], only_valid: bool = False) -> OrderedDict[str, DataLoader]:
-    loaders: OrderedDict[str, DataLoader] = OrderedDict()
+def get_loaders(data_cfg: ORDType[str, Any], only_valid: bool = False) -> ORDType[str, DataLoader]:
+    loaders: ORDType[str, DataLoader] = OrderedDict()
     if not only_valid:
         loaders.update({
             'train': get_dataloader(data_cfg, train=True)

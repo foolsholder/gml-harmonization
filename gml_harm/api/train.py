@@ -16,6 +16,7 @@ from ..data.utils import get_loaders
 def train_model(model, cfg: Dict[str, Any]):
     project_name = cfg['project_name']
     experiment_name = cfg['experiment_name']
+    experiment_folder = cfg['experiment_folder']
 
     trainer = create_trainer(cfg['trainer'])
 
@@ -26,7 +27,7 @@ def train_model(model, cfg: Dict[str, Any]):
 
     checkpoints_callbacks = get_checkpoints_callbacks(
         cfg['checkpoints_callbacks'],
-        experiment_name
+        experiment_folder
     )
 
     all_callbacks: OrderedDict = OrderedDict()
