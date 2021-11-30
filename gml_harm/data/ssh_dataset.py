@@ -69,9 +69,13 @@ class SSHTrainDataset(ABCDataset):
             image=crop_content['image'],
             **{'content_beta': crop_content['view_beta']}
         )
+        crop_reference = self.geometric_augmentations(
+            image=crop_reference['image'],
+            **{'content_beta': crop_reference['view_beta']}
+        )
 
         content_alpha, content_beta = crop_content['image'], crop_content['content_beta']
-        reference_alpha, reference_beta = crop_reference['image'], crop_reference['view_beta']
+        reference_alpha, reference_beta = crop_reference['image'], crop_reference['content_beta']
 
         out = {
             'image': content_alpha,

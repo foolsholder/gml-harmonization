@@ -70,7 +70,7 @@ class HVQVAERunner(dl.Runner):
 
         harm_content, latent_loss = model(content, reference)
 
-        outputs = content * masks + (1. - masks) * reference
+        outputs = harm_content * masks + (1. - masks) * reference
 
         self.batch = {
             'outputs': outputs,

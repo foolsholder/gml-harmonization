@@ -16,7 +16,7 @@ from albumentations import (
 
 from albumentations.pytorch import ToTensorV2
 from collections import OrderedDict
-from copy import copy
+from copy import copy, deepcopy
 from torch.utils.data import DataLoader, Dataset
 from typing import Dict, Any, List,Type, Tuple, Union, OrderedDict as ORDType
 
@@ -103,7 +103,7 @@ def get_dataset(data_cfg: Dict[str, Any], split: str) -> Dataset:
         'SSHTestDataset': SSHTestDataset
     }
     dataset_cfg = data_cfg[split]
-    dataset_cfg = copy(dataset_cfg)
+    dataset_cfg = deepcopy(dataset_cfg)
 
     datasets = dataset_cfg.pop('datasets')
 
