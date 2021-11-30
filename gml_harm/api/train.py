@@ -1,4 +1,5 @@
 from catalyst import dl
+from collections import OrderedDict
 from typing import Dict, Any
 
 from ..engine.utils import (
@@ -28,7 +29,7 @@ def train_model(model, cfg: Dict[str, Any]):
         experiment_name
     )
 
-    all_callbacks = {}
+    all_callbacks: OrderedDict = OrderedDict()
     for callbacks_dict in [metric_callbacks, opts_callbacks, checkpoints_callbacks]:
         all_callbacks.update(callbacks_dict)
 

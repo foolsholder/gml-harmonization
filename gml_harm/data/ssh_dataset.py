@@ -112,7 +112,7 @@ class SSHTestDataset(ABCDataset):
     def __len__(self) -> int:
         return len(self.dataset_samples)
 
-    def _imread(self, img_path, bgr2rgb: bool = False):
+    def _imread(self, img_path: str, bgr2rgb: bool = False):
         img = cv2.imread(img_path)
         if bgr2rgb:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)

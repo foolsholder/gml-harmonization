@@ -1,11 +1,12 @@
 from json import load, dump
 from pathlib import Path
+from collections import OrderedDict
 
 def init_experiment(args):
     config_path = args.config
 
     with open(config_path, 'r') as config_file:
-        cfg = load(config_file)
+        cfg = load(config_file, object_pairs_hook=OrderedDict)
 
     cfg['experiment_name'] = args.exp_name
     exp_folder = Path(cfg['experiments_folder']) / args.exp_name
