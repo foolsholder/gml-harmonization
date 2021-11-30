@@ -18,6 +18,6 @@ def init_experiment(args):
         cfg['data']['num_workers'] = args.num_workers
 
     with open(exp_folder / 'config.json', 'w') as config_out:
-        dump(cfg, config_out)
+        dump(cfg, config_out, object_pairs_hook=OrderedDict)
 
     return cfg
