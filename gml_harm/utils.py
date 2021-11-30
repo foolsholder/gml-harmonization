@@ -11,7 +11,7 @@ def init_experiment(args):
 
     cfg['experiment_name'] = args.exp_name
     experiment_folder = Path(cfg['experiments_folder'] + '/' + args.exp_name)
-    cfg['experiments_folder'] = str(experiment_folder)
+    cfg['experiment_folder'] = str(experiment_folder)
     exp_folder = experiment_folder
     exp_folder.mkdir(exist_ok=True)
 
