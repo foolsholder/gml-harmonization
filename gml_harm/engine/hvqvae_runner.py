@@ -84,7 +84,9 @@ class HVQVAERunner(dl.Runner):
             outputs_255 = self.to_original_scale.apply(outputs)
             outputs_255 = torch.clip(outputs_255, 0, 255.)
             targets_255 = self.to_original_scale.apply(targets)
+            harm_content_255 = self.to_original_scale.apply(harm_content)
             self.batch.update({
+                'harm_255': harm_content_255,
                 'outputs_255': outputs_255,
                 'targets_255': targets_255,
                 'targets_and_masks_255': (targets_255, masks)

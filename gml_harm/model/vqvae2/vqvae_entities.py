@@ -68,9 +68,8 @@ class Quantize(nn.Module):
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
-        diff = (quantize.detach() - input).pow(2).mean()
+        diff = F.mse_loss(input, quantize.detach(), reduction='mean')
         quantize = input + (quantize - input).detach()
-
         return quantize, diff, embed_ind
 
     def embed_code(self, embed_id):
@@ -82,10 +81,12 @@ class ResBlock(nn.Module):
         super().__init__()
 
         self.conv = nn.Sequential(
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.Conv2d(in_channel, channel, 3, padding=1),
+            nn.BatchNorm2d(channel),
             nn.ReLU(inplace=True),
             nn.Conv2d(channel, in_channel, 1),
+            nn.BatchNorm2d(in_channel),
         )
 
     def forward(self, input):
@@ -102,17 +103,22 @@ class Encoder(nn.Module):
         if stride == 4:
             blocks = [
                 nn.Conv2d(in_channel, channel // 2, 4, stride=2, padding=1),
+                nn.BatchNorm2d(channel // 2),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(channel // 2, channel, 4, stride=2, padding=1),
+                nn.BatchNorm2d(channel),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(channel, channel, 3, padding=1),
+                nn.BatchNorm2d(channel),
             ]
 
         elif stride == 2:
             blocks = [
                 nn.Conv2d(in_channel, channel // 2, 4, stride=2, padding=1),
+                nn.BatchNorm2d(channel // 2),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(channel // 2, channel, 3, padding=1),
+                nn.BatchNorm2d(channel),
             ]
 
         for i in range(n_res_block):
@@ -143,6 +149,7 @@ class Decoder(nn.Module):
             blocks.extend(
                 [
                     nn.ConvTranspose2d(channel, channel // 2, 4, stride=2, padding=1),
+                    nn.BatchNorm2d(channel // 2),
                     nn.ReLU(inplace=True),
                     nn.ConvTranspose2d(
                         channel // 2, out_channel, 4, stride=2, padding=1
