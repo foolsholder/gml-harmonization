@@ -7,6 +7,9 @@ from ..data.transforms import ToOriginalScale
 
 
 class SupervisedTrainer(dl.Runner):
+    def get_engine(self) -> dl.IEngine:
+        return dl.DeviceEngine('cuda:0')
+
     def __init__(self, restore_scale=True):
         super(SupervisedTrainer, self).__init__()
         self.to_original_scale = None
@@ -18,8 +21,8 @@ class SupervisedTrainer(dl.Runner):
         masks = batch['masks']
         targets = batch['targets']
 
-        #print(batch['images'].shape, batch['masks'].shape, batch['targets'].shape)
-        outputs = self.model(images, masks)
+        model = self.model['model']
+        outputs = model(images, masks)
 
         self.batch = {
             'outputs': outputs,

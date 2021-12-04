@@ -114,7 +114,7 @@ class Encoder(nn.Module):
 
         elif stride == 2:
             blocks = [
-                nn.Conv2d(in_channel, channel // 2, 4, stride=2, padding=1, bias=False)
+                nn.Conv2d(in_channel, channel // 2, 4, stride=2, padding=1, bias=False),
                 nn.BatchNorm2d(channel // 2),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(channel // 2, channel, 3, padding=1, bias=False),
@@ -148,8 +148,8 @@ class Decoder(nn.Module):
         if stride == 4:
             blocks.extend(
                 [
-                    nn.ConvTranspose2d(channel, channel // 2, 4, stride=2, padding=1),
-                    nn.BatchNorm2d(channel // 2, bias=False),
+                    nn.ConvTranspose2d(channel, channel // 2, 4, stride=2, padding=1, bias=False),
+                    nn.BatchNorm2d(channel // 2),
                     nn.ReLU(inplace=True),
                     nn.ConvTranspose2d(
                         channel // 2, out_channel, 4, stride=2, padding=1

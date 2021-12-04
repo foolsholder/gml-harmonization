@@ -4,7 +4,15 @@ from catalyst import dl
 from collections import OrderedDict
 from copy import copy
 from torch.optim import Optimizer
-from typing import Dict, Any, Tuple, List, Callable, Union, OrderedDict as ORDType
+from typing import (
+    Dict,
+    Any,
+    Tuple,
+    List,
+    Callable,
+    Union,
+    OrderedDict as ORDType
+)
 
 from .supervised import SupervisedTrainer
 from .self_supervised import SelfSupervisedTrainer
@@ -19,14 +27,26 @@ from ..core.callbacks.metric_callbacks import (
     IdentityCallback
 )
 
-from ..core.criterions import MSECriterion, PSNRCriterion, fMSECriterion
+from ..core.callbacks.optimizer_callbacks import (
+    OptimizerCallback
+)
+
+from ..core.criterions import (
+    MSECriterion,
+    PSNRCriterion,
+    fMSECriterion,
+    FNMSECriterion
+)
 
 
-def get_criterions(criterion_cfg: ORDType[str, ORDType[str, str]]) -> ORDType[str, torch.nn.Module]:
+def get_criterions(
+        criterion_cfg: ORDType[str, ORDType[str, str]]
+    ) -> ORDType[str, torch.nn.Module]:
     possible_criterions: Dict[str, torch.nn.Module] = {
         "MSECriterion": MSECriterion,
         "PSNRCriterion": PSNRCriterion,
-        "fMSECriterion": fMSECriterion
+        "fMSECriterion": fMSECriterion,
+        "FNMSECriterion": FNMSECriterion
     }
     crits: ORDType[str, torch.nn.Module] = OrderedDict()
     for crit_name, crit_params in criterion_cfg.items():
@@ -38,8 +58,8 @@ def get_criterions(criterion_cfg: ORDType[str, ORDType[str, str]]) -> ORDType[st
 
 def get_metric_callbacks(
         metric_callbacks_cfg: List[ORDType[str, str]]
-    ) -> ORDType[str, dl.Callback]:
-    callbacks: ORDType[str, dl.Callback] = OrderedDict()
+    ) -> List[dl.Callback]:
+    callbacks: List[dl.Callback] = []
 
     # noinspection PyTypeChecker
     possible_callbacks: Dict[str, Callable[[Any], dl.Callback]] = {
@@ -74,7 +94,7 @@ def get_metric_callbacks(
             loader = 'valid' if eval_only else 'train'
             callback = dl.ControlFlowCallback(callback, loaders=loader)
 
-        callbacks['metric_{}'.format(metric_idx + 1)] = callback
+        callbacks += [callback]
 
     return callbacks
 
@@ -135,22 +155,22 @@ def create_trainer(trainer_cfg: ORDType[str, str]) -> dl.Runner:
 
 def get_optimizers_callbacks(
         optimizers_callbacks_cfg: List[ORDType[str, Any]]
-    ) -> ORDType[str, dl.OptimizerCallback]:
+    ) -> List[OptimizerCallback]:
     """
     :param optimizers_callbacks_cfg: Sequence[ optim_callback params... ]
     :return:
     """
-    opt_callbacks: ORDType[str: dl.OptimizerCallback] = OrderedDict()
+    opt_callbacks: List[OptimizerCallback] = []
     for opt_idx, params in enumerate(optimizers_callbacks_cfg):
-        opt_callback = dl.OptimizerCallback(**params)
-        opt_callbacks['optimizer_{}'.format(opt_idx + 1)] = opt_callback
+        opt_callback = OptimizerCallback(**params)
+        opt_callbacks += [opt_callback]
     return opt_callbacks
 
 
 def get_checkpoints_callbacks(
         checkpoints_cfg: List[ORDType[str, Any]],
-        experiment_folder: str) -> ORDType[str, dl.CheckpointCallback]:
-    checkpoint_callbacks: ORDType[str: dl.CheckpointCallback] = OrderedDict()
+        experiment_folder: str) -> List[dl.CheckpointCallback]:
+    checkpoint_callbacks: List[dl.CheckpointCallback] = []
     for chp_idx, params in enumerate(checkpoints_cfg):
         params = copy(params)
         use = params.pop('use')
@@ -159,21 +179,21 @@ def get_checkpoints_callbacks(
 
         params['logdir'] = experiment_folder  + '/' + 'checkpoints'
         chp_callback = dl.CheckpointCallback(**params)
-        checkpoint_callbacks['optimizer_{}'.format(chp_idx + 1)] = chp_callback
+        checkpoint_callbacks += [chp_callback]
     return checkpoint_callbacks
 
 
 def get_scheduler(
         optimizers: ORDType[str, Optimizer],
         schedulers_cfg: ORDType[str, Any]
-    ) -> Tuple[ORDType[str, Any], ORDType[str, dl.SchedulerCallback]]:
+    ) -> Tuple[ORDType[str, Any], List[dl.SchedulerCallback]]:
     """
     :param optimizers: Dict[str, Optimizer]
     :param schedulers_cfg: Dict[str, LRScheduler]
     :return:
     """
     scheds: ORDType[str, Any] = OrderedDict()
-    scheds_callbacks: ORDType[str, dl.SchedulerCallback] = OrderedDict()
+    scheds_callbacks: List[dl.SchedulerCallback] = []
 
     for opt_name, sched_params in schedulers_cfg.items():
         dct_params = copy(sched_params)
@@ -182,6 +202,6 @@ def get_scheduler(
         sched_type = getattr(torch.optim.lr_scheduler, sched_type_name)
         sched = sched_type(optimizer=optimizers[opt_name], **dct_params)
         scheds.update({opt_name: sched})
-        scheds_callbacks[opt_name] = dl.SchedulerCallback(mode=mode, scheduler_key=opt_name)
+        scheds_callbacks += [dl.SchedulerCallback(mode=mode, scheduler_key=opt_name)]
 
     return scheds, scheds_callbacks

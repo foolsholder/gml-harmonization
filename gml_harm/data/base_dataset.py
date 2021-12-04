@@ -19,6 +19,7 @@ class ABCDataset(ABC, Dataset):
 
 class BaseDataset(ABCDataset):
     def __init__(self,
+                 crop: Compose = None,
                  augmentations: Compose = None,
                  to_tensor_transforms: Compose = None,
                  keep_without_mask: float = 0.) -> None:
@@ -27,6 +28,12 @@ class BaseDataset(ABCDataset):
             'target': 'image'
         }
         """
+        if crop is None:
+            crop = Compose(
+                [],
+                additional_targets=to_tensor_transforms.additional_targets
+            )
+        self.crop = crop
         self.augmentations = augmentations
 
         if to_tensor_transforms is None:
@@ -74,12 +81,13 @@ class BaseDataset(ABCDataset):
                               for target_name in self.augmentations.additional_targets.keys()}
 
         valid_augmentation: bool = False
-        aug_output: Dict[str, np.array] = {}
+        cropped_output: Dict[str, np.array] = {}
         while not valid_augmentation:
-            aug_output = self.augmentations(image=sample['image'],
-                                            mask=sample['mask'],
-                                            **additional_targets)
-            valid_augmentation = self.check_augmented_sample(aug_output)
+            cropped_output = self.crop(image=sample['image'],
+                                       mask=sample['mask'],
+                                       **additional_targets)
+            valid_augmentation = self.check_augmented_sample(cropped_output)
+        aug_output = self.augmentations(**cropped_output)
 
         for target_name, transformed_target in aug_output.items():
             sample[target_name] = transformed_target

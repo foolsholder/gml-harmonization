@@ -1,12 +1,6 @@
 {
   "model": {
-    "type": "HVQVAE",
-    "format": "model+dict",
-    "model+dict": {
-      "content_encoder": "content_encoder",
-      "reference_encoder": "reference_encoder",
-      "decoder": "decoder"
-    }
+    "type": "HVQVAE"
   },
   "trainer": {
     "type": "HVQVAERunner",
@@ -180,11 +174,11 @@
       "RealHM": "../data/RealHM_resized1024",
 
       "MSCOCO": "../data/MSCOCO/train/data",
-      "UnsplashLite": "../data/UnsplashLite/data",
+      "UnsplashLite": "../data/UnsplashLite_resized640/data",
       "UnsplashFull": ""
     },
     "train": {
-      "datasets": ["MSCOCO"],
+      "datasets": ["MSCOCO", "UnsplashLite"],
       "type": "SSHTrainDataset",
       "geometric_augmentations": {
         "HorizontalFlip": {

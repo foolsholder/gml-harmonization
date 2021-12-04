@@ -1,5 +1,6 @@
 import torch
 
+from copy import copy
 from torch import nn
 from typing import Union, Tuple, Optional, List
 
@@ -19,7 +20,7 @@ class ConvNormAct(nn.Module):
     ):
         super(ConvNormAct, self).__init__()
         self.conv = conv_layer(in_channels, out_channels, kernel_size, stride, padding)
-        self.norm = norm_layer(out_channels) if norm_layer is not None else nn.Identity
+        self.norm = norm_layer(out_channels) if norm_layer is not None else nn.Identity()
         self.act = activation(inplace=True)
         self.masked_norm = masked_norm
 
@@ -102,6 +103,8 @@ class BaseEncoder(nn.Module):
         self.block_dict = nn.ModuleDict()
         self.connect_dict = nn.ModuleDict()
 
+        if backbone_channels is None:
+            backbone_channels = []
         reversed_backbone_channels = list(reversed(backbone_channels))
 
         out_channels = channels
@@ -109,7 +112,7 @@ class BaseEncoder(nn.Module):
             if block_idx % 2:
                 in_channels = out_channels
             else:
-                in_channels, out_channels = out_channels, max(2 * out_channels, max_channels)
+                in_channels, out_channels = out_channels, min(2 * out_channels, max_channels)
 
             if 0 <= backbone_start_connect_pos <= block_idx and len(reversed_backbone_channels):
                 stage_channels = reversed_backbone_channels.pop()
@@ -120,7 +123,7 @@ class BaseEncoder(nn.Module):
                 in_channels=in_channels,
                 out_channels=out_channels,
                 kernel_size=4,
-                padding=(block_idx + 1 < depth),
+                padding=int(block_idx + 1 < depth),
                 stride=2,
                 norm_layer=norm_layer,
                 activation=activation,
@@ -139,16 +142,16 @@ class BaseEncoder(nn.Module):
 
         output = []
 
-        output += [self.block0(x, mask)]
+        output += [self.block0(x, mask=None)]
         output += [self.block1(output[-1], mask)]
 
-        reversed_backbone_feats = None
+        reversed_backbone_feats = []
         if backbone_feats is not None:
             reversed_backbone_feats = list(reversed(backbone_feats))
 
         for block_idx in range(2, self.depth):
             x = output[-1]
-            if 0 <= self.backbone_start_connect_pos <= block_idx and len(backbone_feats):
+            if 0 <= self.backbone_start_connect_pos <= block_idx and len(reversed_backbone_feats):
                 bb_feat = reversed_backbone_feats.pop()
                 connector = self.connect_dict[f'connect_{block_idx}']
                 x = connector(x, bb_feat)
@@ -172,13 +175,13 @@ class BaseDecoder(nn.Module):
         self.deconv_list = nn.ModuleList()
         self.depth = depth
 
-        reversed_enc_channels = list(reversed(encoder_channels))
+        encoder_channels = copy(encoder_channels)
 
-        in_channels = reversed_enc_channels.pop()
+        in_channels = encoder_channels.pop()
 
         for block_idx in range(depth):
-            if len(reversed_enc_channels):
-                out_channels = reversed_enc_channels.pop()
+            if len(encoder_channels):
+                out_channels = encoder_channels.pop()
             else:
                 out_channels = in_channels // 2
             self.deconv_list.append(
@@ -186,7 +189,8 @@ class BaseDecoder(nn.Module):
                     in_channels=in_channels,
                     out_channels=out_channels,
                     kernel_size=4,
-                    padding=(block_idx > 0),
+                    stride=2,
+                    padding=int(block_idx > 0),
                     norm_layer=norm_layer,
                     activation=activation,
                     conv_layer=nn.ConvTranspose2d,
@@ -194,7 +198,6 @@ class BaseDecoder(nn.Module):
                 )
             )
             in_channels = out_channels
-
         self.to_rgb = nn.Conv2d(in_channels, 3, kernel_size=1)
 
         if image_fusion:
@@ -206,9 +209,12 @@ class BaseDecoder(nn.Module):
             comp_image: torch.Tensor,
             mask: torch.Tensor
     ):
-        reversed_enc_output = list(reversed(encoder_output))
+        """
+        it's guarantee that len(encoder_output) == len(self.deconv_list) by __init__
+        """
         x = encoder_output.pop()
-        for block, skip_connection in zip(self.deconv_list[:-1], reversed_enc_output):
+        for block in self.deconv_list[:-1]:
+            skip_connection = encoder_output.pop()
             x = block(x, mask) + skip_connection
         x = self.deconv_list[-1](x, mask)
         harm_image = self.to_rgb(x)

@@ -1,6 +1,6 @@
 from catalyst import dl
 from collections import OrderedDict
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from ..engine.utils import (
     create_trainer,
@@ -31,15 +31,15 @@ def train_model(model, cfg: Dict[str, Any]):
         experiment_folder
     )
 
-    all_callbacks: OrderedDict = OrderedDict()
-    for callbacks_dict in [metric_callbacks, opts_callbacks, checkpoints_callbacks]:
-        all_callbacks.update(callbacks_dict)
-
     if 'schedulers' in cfg:
         scheds, scheds_callbacks = get_scheduler(opts, cfg['schedulers'])
-        all_callbacks.update(scheds_callbacks)
     else:
         scheds = None
+        scheds_callbacks = []
+    all_callbacks: List[dl.Callback] = []
+    for callbacks_dict in [metric_callbacks, opts_callbacks, scheds_callbacks, checkpoints_callbacks]:
+        all_callbacks.extend(callbacks_dict)
+
     loaders = get_loaders(cfg['data'])
 
     trainer.train(

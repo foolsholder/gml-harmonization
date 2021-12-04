@@ -26,3 +26,18 @@ class fMSECriterion(MSECriterion):
         mask = mask.view(batch_size, -1).sum(dim=1)
         fmse = sse / mask
         return fmse.mean()
+
+
+class FNMSECriterion(MSECriterion):
+    def __init__(self, min_area: float = 100.):
+        super(FNMSECriterion, self).__init__()
+        self.min_area = min_area
+
+    def forward(self, input: Tensor, target: Tuple[Tensor, Tensor]) -> Tensor:
+        target, mask = target
+        batch_size = input.size(0)
+        sse = F.mse_loss(input, target, reduction='none').view(batch_size, -1).sum(dim=1)
+        mask = mask.view(batch_size, -1).sum(dim=1)
+        mask = torch.clamp_min_(mask, self.min_area)
+        fmse = sse / mask
+        return fmse.mean()
