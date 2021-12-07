@@ -14,6 +14,7 @@ from typing import (
     OrderedDict as ORDType
 )
 
+from .base_runner import BaseRunner
 from .supervised import SupervisedTrainer
 from .self_supervised import SelfSupervisedTrainer
 from .hvqvae_runner import HVQVAERunner
@@ -127,7 +128,7 @@ def get_optimizers(
                 else:
                     assert model_dict_instance
                     submodel = model[param_group_name]
-            elif param_group_name == 'model':
+            else:
                 if not model_nn_instance:
                     submodel = model['model']
                 else:
@@ -139,7 +140,7 @@ def get_optimizers(
     return optimizers
 
 
-def create_trainer(trainer_cfg: ORDType[str, str]) -> dl.Runner:
+def create_trainer(trainer_cfg: ORDType[str, str]) -> BaseRunner:
     trainer_cfg = copy(trainer_cfg)
     trainer_type_name = trainer_cfg.pop('type')
 

@@ -1,3 +1,4 @@
+import torch.utils.data
 from albumentations import (
     BasicTransform,
     Compose,
@@ -151,15 +152,45 @@ def get_dataset(data_cfg: ORDType[str, Any], split: str) -> Dataset:
     return ComposedDataset(builed_datasets)
 
 
+def get_raw_dataset(data_cfg: ORDType[str, Any],
+                    train: bool = False) -> Dict[str, Dataset]:
+    split = 'train' if train else 'test'
+    dataset: Dataset = get_dataset(data_cfg, split)
+
+    num_workers: int = data_cfg['num_workers']
+    batch_size: int = data_cfg['batch_size']
+    return {
+        'split': split,
+        'dataset': dataset,
+        'num_workers': num_workers,
+        'batch_size': batch_size
+    }
+
+
+def get_raw_datasets(data_cfg: ORDType[str, Any],
+                     only_valid: bool = False) -> ORDType[str, Dict[str, Dataset]]:
+    res = OrderedDict()
+    if not only_valid:
+        res.update({'train': get_raw_dataset(data_cfg, 'train')})
+    res.update({'valid': get_raw_dataset(data_cfg, 'test')})
+    return res
+
+
 def get_dataloader(data_cfg: ORDType[str, Any], train: bool = False) -> DataLoader:
     split = 'train' if train else 'test'
     dataset: Dataset = get_dataset(data_cfg, split)
 
     num_workers: int = data_cfg['num_workers']
     batch_size: int = data_cfg['batch_size']
+    sampler = None
+    sampler = torch.utils.data.DistributedSampler(
+        dataset=dataset,
+        shuffle=train
+    )
     data_loader = DataLoader(dataset,
                              num_workers=num_workers,
                              batch_size=batch_size,
+                             sampler=sampler,
                              shuffle=train,
                              drop_last=train,
                              pin_memory=True)

@@ -1,3 +1,8 @@
+import os.path
+
+import torch
+import torch.distributed as dist
+
 from catalyst import dl
 from collections import OrderedDict
 from typing import Dict, Any, List
@@ -9,9 +14,10 @@ from ..engine.utils import (
     get_criterions,
     get_optimizers_callbacks,
     get_checkpoints_callbacks,
-    get_scheduler
+    get_scheduler,
+
 )
-from ..data.utils import get_loaders
+from ..data.utils import get_loaders, get_raw_datasets
 
 
 def train_model(model, cfg: Dict[str, Any]):
@@ -40,19 +46,23 @@ def train_model(model, cfg: Dict[str, Any]):
     for callbacks_dict in [metric_callbacks, opts_callbacks, scheds_callbacks, checkpoints_callbacks]:
         all_callbacks.extend(callbacks_dict)
 
-    loaders = get_loaders(cfg['data'])
+    datasets = get_raw_datasets(cfg['data'])
 
     trainer.train(
         model=model,
         optimizer=opts,
         scheduler=scheds,
         criterion=crits,
-        loaders=loaders,
+        raw_datasets=datasets,
         valid_loader='valid',
         num_epochs=cfg['num_epochs'],
         callbacks=all_callbacks,
         loggers={
-            "wandb": dl.WandbLogger(project=project_name, name=experiment_name)
+            # "wandb": dl.WandbLogger(project=project_name, name=experiment_name),
+            "tensorboard": dl.TensorboardLogger(logdir=experiment_folder),
+            "csv": dl.CSVLogger(logdir=experiment_folder),
+            # "console": dl.ConsoleLogger(),
+            # "mlflow": dl.MLflowLogger(experiment=experiment_name, run=project_name)
         },
         verbose=1,
     )

@@ -17,11 +17,11 @@ def create_dih(model_cfg: ORDType[str, Any]) -> torch.nn.Module:
     result: ORDType[str, torch.nn.Module] = OrderedDict()
     if not use_bb:
         model = DIH(**base_cfg)
-        # result['base'] = model
+        result['base'] = model
     else:
         model = BackbonedDIH(bb_cfg, **base_cfg)
-        # result['base'] = getattr(model, 'base')
-        # result['backbone'] = getattr(model, 'backbone')
+        result['base'] = getattr(model, 'base')
+        result['backbone'] = getattr(model, 'backbone')
 
     result['model'] = model
     return result

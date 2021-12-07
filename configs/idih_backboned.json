@@ -3,7 +3,7 @@
     "type": "DIH",
     "base": {},
     "backbone": {
-      "use": false
+      "use": true
     }
   },
   "trainer": {
@@ -17,6 +17,11 @@
         {
           "params": "base",
           "lr": 2e-3,
+          "weight_decay": 1e-4
+        },
+        {
+          "params": "backbone",
+          "lr": 1e-4,
           "weight_decay": 1e-4
         }
       ]
@@ -106,7 +111,7 @@
       "UnsplashFull": ""
     },
     "train": {
-      "datasets": ["HCOCO"],
+      "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
       "type": "HDataset",
       "crop": {
         "PadIfNeeded": true,
@@ -125,7 +130,7 @@
       }
     },
     "test": {
-      "datasets": ["HCOCO"],
+      "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
       "type": "HDataset",
       "augmentations": {
         "Resize": {
@@ -137,11 +142,11 @@
         "target": "image"
       }
     },
-    "batch_size": 100,
+    "batch_size": 160,
     "num_workers": 40
   },
   "gpus": "",
   "num_epochs": 180,
-  "project_name": "gml_harm_testing",
+  "project_name": "gml_harm",
   "experiments_folder": "../diplom_exps"
 }

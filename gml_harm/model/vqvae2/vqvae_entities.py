@@ -82,11 +82,11 @@ class ResBlock(nn.Module):
 
         self.conv = nn.Sequential(
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channel, channel, 3, padding=1, bias=False),
-            nn.BatchNorm2d(channel),
+            nn.Conv2d(in_channel, channel, 3, padding=1, bias=True),
+            # nn.BatchNorm2d(channel),
             nn.ReLU(inplace=True),
-            nn.Conv2d(channel, in_channel, 1, bias=False),
-            nn.BatchNorm2d(in_channel),
+            nn.Conv2d(channel, in_channel, 1, bias=True),
+            # nn.BatchNorm2d(in_channel),
         )
 
     def forward(self, input):
@@ -102,23 +102,23 @@ class Encoder(nn.Module):
 
         if stride == 4:
             blocks = [
-                nn.Conv2d(in_channel, channel // 2, 4, stride=2, padding=1, bias=False),
-                nn.BatchNorm2d(channel // 2),
+                nn.Conv2d(in_channel, channel // 2, 4, stride=2, padding=1, bias=True),
+                # nn.BatchNorm2d(channel // 2),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(channel // 2, channel, 4, stride=2, padding=1, bias=False),
-                nn.BatchNorm2d(channel),
+                nn.Conv2d(channel // 2, channel, 4, stride=2, padding=1, bias=True),
+                # nn.BatchNorm2d(channel),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(channel, channel, 3, padding=1, bias=False),
-                nn.BatchNorm2d(channel),
+                nn.Conv2d(channel, channel, 3, padding=1, bias=True),
+                # nn.BatchNorm2d(channel),
             ]
 
         elif stride == 2:
             blocks = [
-                nn.Conv2d(in_channel, channel // 2, 4, stride=2, padding=1, bias=False),
-                nn.BatchNorm2d(channel // 2),
+                nn.Conv2d(in_channel, channel // 2, 4, stride=2, padding=1, bias=True),
+                # nn.BatchNorm2d(channel // 2),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(channel // 2, channel, 3, padding=1, bias=False),
-                nn.BatchNorm2d(channel),
+                nn.Conv2d(channel // 2, channel, 3, padding=1, bias=True),
+                # nn.BatchNorm2d(channel),
             ]
 
         for i in range(n_res_block):
@@ -148,8 +148,8 @@ class Decoder(nn.Module):
         if stride == 4:
             blocks.extend(
                 [
-                    nn.ConvTranspose2d(channel, channel // 2, 4, stride=2, padding=1, bias=False),
-                    nn.BatchNorm2d(channel // 2),
+                    nn.ConvTranspose2d(channel, channel // 2, 4, stride=2, padding=1, bias=True),
+                    # nn.BatchNorm2d(channel // 2),
                     nn.ReLU(inplace=True),
                     nn.ConvTranspose2d(
                         channel // 2, out_channel, 4, stride=2, padding=1
