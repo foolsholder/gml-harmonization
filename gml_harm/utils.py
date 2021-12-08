@@ -9,6 +9,9 @@ def init_experiment(args):
     with open(config_path, 'r') as config_file:
         cfg = load(config_file, object_pairs_hook=OrderedDict)
 
+    if args.project_name:
+        cfg['project_name'] = args.project_name
+
     cfg['experiment_name'] = args.exp_name
     experiment_folder = Path(cfg['experiments_folder'] + '/' + args.exp_name)
     cfg['experiment_folder'] = str(experiment_folder)

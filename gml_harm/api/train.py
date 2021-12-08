@@ -1,6 +1,11 @@
+import os.path
+
+import torch
+import torch.distributed as dist
+
 from catalyst import dl
 from collections import OrderedDict
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from ..engine.utils import (
     create_trainer,
@@ -9,9 +14,10 @@ from ..engine.utils import (
     get_criterions,
     get_optimizers_callbacks,
     get_checkpoints_callbacks,
-    get_scheduler
+    get_scheduler,
+
 )
-from ..data.utils import get_loaders
+from ..data.utils import get_loaders, get_raw_datasets
 
 
 def train_model(model, cfg: Dict[str, Any]):
@@ -31,28 +37,32 @@ def train_model(model, cfg: Dict[str, Any]):
         experiment_folder
     )
 
-    all_callbacks: OrderedDict = OrderedDict()
-    for callbacks_dict in [metric_callbacks, opts_callbacks, checkpoints_callbacks]:
-        all_callbacks.update(callbacks_dict)
-
     if 'schedulers' in cfg:
         scheds, scheds_callbacks = get_scheduler(opts, cfg['schedulers'])
-        all_callbacks.update(scheds_callbacks)
     else:
         scheds = None
-    loaders = get_loaders(cfg['data'])
+        scheds_callbacks = []
+    all_callbacks: List[dl.Callback] = []
+    for callbacks_dict in [metric_callbacks, opts_callbacks, scheds_callbacks, checkpoints_callbacks]:
+        all_callbacks.extend(callbacks_dict)
+
+    datasets = get_raw_datasets(cfg['data'])
 
     trainer.train(
         model=model,
         optimizer=opts,
         scheduler=scheds,
         criterion=crits,
-        loaders=loaders,
+        raw_datasets=datasets,
         valid_loader='valid',
         num_epochs=cfg['num_epochs'],
         callbacks=all_callbacks,
         loggers={
-            "wandb": dl.WandbLogger(project=project_name, name=experiment_name)
+            # "wandb": dl.WandbLogger(project=project_name, name=experiment_name),
+            "tensorboard": dl.TensorboardLogger(logdir=experiment_folder),
+            "csv": dl.CSVLogger(logdir=experiment_folder),
+            # "console": dl.ConsoleLogger(),
+            # "mlflow": dl.MLflowLogger(experiment=experiment_name, run=project_name)
         },
         verbose=1,
     )

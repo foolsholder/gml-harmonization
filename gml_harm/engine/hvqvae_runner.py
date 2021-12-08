@@ -2,16 +2,11 @@ import torch
 from catalyst import dl
 from typing import Any, Mapping, Callable, Sequence
 
+from .base_runner import BaseRunner
 from ..data.transforms import ToOriginalScale
 
 
-class HVQVAERunner(dl.Runner):
-    def __init__(self, restore_scale=True):
-        super(HVQVAERunner, self).__init__()
-        self.to_original_scale = None
-        if restore_scale is not None:
-            self.to_original_scale = ToOriginalScale()
-
+class HVQVAERunner(BaseRunner):
     def handle_batch_train(self, batch: Mapping[str, Any]) -> None:
         content_alpha = batch['content_alpha']
         content_beta = batch['content_beta']
@@ -81,10 +76,10 @@ class HVQVAERunner(dl.Runner):
         }
 
         if self.to_original_scale is not None:
-            outputs_255 = self.to_original_scale.apply(outputs)
+            outputs_255 = self.to_original_scale(outputs)
             outputs_255 = torch.clip(outputs_255, 0, 255.)
-            targets_255 = self.to_original_scale.apply(targets)
-            harm_content_255 = self.to_original_scale.apply(harm_content)
+            targets_255 = self.to_original_scale(targets)
+            harm_content_255 = self.to_original_scale(harm_content)
             harm_content_255 = torch.clip(harm_content_255, 0, 255.)
             self.batch.update({
                 'harm_255': harm_content_255,

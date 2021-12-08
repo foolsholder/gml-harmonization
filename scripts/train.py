@@ -24,6 +24,8 @@ def parse_args():
                         help='Here you can specify the name of the experiment. '
                              'It will be added as a suffix to the experiment folder.')
 
+    parser.add_argument('--project_name', type=str, default='')
+
     parser.add_argument('--num_workers', type=int, default=-1,
                         metavar='N', help='Dataloader threads.')
 

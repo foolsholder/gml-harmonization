@@ -1,12 +1,6 @@
 {
   "model": {
-    "type": "HVQVAE",
-    "format": "model+dict",
-    "model+dict": {
-      "content_encoder": "content_encoder",
-      "reference_encoder": "reference_encoder",
-      "decoder": "decoder"
-    }
+    "type": "HVQVAE"
   },
   "trainer": {
     "type": "HVQVAERunner",
@@ -174,17 +168,17 @@
   "data": {
     "dataset_paths": {
       "HCOCO": "../data/HCOCO",
-      "HAdobe5k": "../data/HAdobe5k_resized1024",
-      "HFlickr": "../data/HFlickr",
-      "Hday2night": "../data/Hday2night",
+      "HAdobe5k": "../data/HAdobe5k_resized1024/real_images",
+      "HFlickr": "../data/HFlickr/real_images",
+      "Hday2night": "../data/Hday2night/real_images",
       "RealHM": "../data/RealHM_resized1024",
 
       "MSCOCO": "../data/MSCOCO/train/data",
-      "UnsplashLite": "../data/UnsplashLite/data",
+      "UnsplashLite": "../data/UnsplashLite_resized640/data",
       "UnsplashFull": ""
     },
     "train": {
-      "datasets": ["MSCOCO"],
+      "datasets": ["MSCOCO", "UnsplashLite", "HFlickr", "Hday2night", "HAdobe5k"],
       "type": "SSHTrainDataset",
       "geometric_augmentations": {
         "HorizontalFlip": {
@@ -232,14 +226,17 @@
       },
       "crop": {
         "PadIfNeeded": true,
-        "type": "RandomCrop",
+        "type": "RandomResizedCrop",
         "height": 256,
-        "width": 256
+        "width": 256,
+        "scale": [0.4, 1.1],
+        "p": 1.0
       },
       "additional_targets": {
         "content_beta": "image",
         "reference_beta": "image",
-        "reference_alpha": "image"
+        "reference_alpha": "image",
+        "view_beta": "image"
       }
     },
     "test": {
@@ -256,7 +253,7 @@
         "reference_image": "image"
       }
     },
-    "batch_size": 100,
+    "batch_size": 40,
     "num_workers": 40
   },
   "gpus": "",
