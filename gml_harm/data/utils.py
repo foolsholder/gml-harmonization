@@ -171,8 +171,8 @@ def get_raw_datasets(data_cfg: ORDType[str, Any],
                      only_valid: bool = False) -> ORDType[str, Dict[str, Dataset]]:
     res = OrderedDict()
     if not only_valid:
-        res.update({'train': get_raw_dataset(data_cfg, 'train')})
-    res.update({'valid': get_raw_dataset(data_cfg, 'test')})
+        res.update({'train': get_raw_dataset(data_cfg, train=True)})
+    res.update({'valid': get_raw_dataset(data_cfg, train=False)})
     return res
 
 
@@ -182,15 +182,9 @@ def get_dataloader(data_cfg: ORDType[str, Any], train: bool = False) -> DataLoad
 
     num_workers: int = data_cfg['num_workers']
     batch_size: int = data_cfg['batch_size']
-    sampler = None
-    sampler = torch.utils.data.DistributedSampler(
-        dataset=dataset,
-        shuffle=train
-    )
     data_loader = DataLoader(dataset,
                              num_workers=num_workers,
                              batch_size=batch_size,
-                             sampler=sampler,
                              shuffle=train,
                              drop_last=train,
                              pin_memory=True)

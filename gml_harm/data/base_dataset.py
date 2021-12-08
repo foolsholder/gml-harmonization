@@ -22,7 +22,7 @@ class BaseDataset(ABCDataset):
                  crop: Compose = None,
                  augmentations: Compose = None,
                  to_tensor_transforms: Compose = None,
-                 keep_without_mask: float = 0.) -> None:
+                 keep_without_mask: float = 0.05) -> None:
         """
         default Compose.additional_targets = {
             'target': 'image'

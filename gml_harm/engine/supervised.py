@@ -1,11 +1,7 @@
 import torch
-from albumentations import Compose
-from catalyst import dl
 from typing import Any, Mapping
 
-
 from .base_runner import BaseRunner
-from ..data.transforms import ToOriginalScale
 
 
 class SupervisedTrainer(BaseRunner):

@@ -61,6 +61,7 @@ class BaseRunner(dl.Runner, ABC):
                 dataset=v['dataset'],
                 batch_size=v['batch_size'],
                 num_workers=v['num_workers'],
-                sampler=sampler
+                sampler=sampler,
+                pin_memory=True
             )
         return loaders

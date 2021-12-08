@@ -8,7 +8,8 @@
   },
   "trainer": {
     "type": "SupervisedTrainer",
-    "restore_scale": true
+    "restore_scale": true,
+    "sync_bn": true
   },
   "optimizers": {
     "model_optimizer": {
@@ -106,14 +107,14 @@
       "UnsplashFull": ""
     },
     "train": {
-      "datasets": ["HCOCO"],
+      "datasets": ["HCOCO", "HAdobe5k", "Hday2night", "HFlickr"],
       "type": "HDataset",
       "crop": {
         "PadIfNeeded": true,
         "type": "RandomResizedCrop",
         "height": 256,
         "width": 256,
-        "scale": [0.5, 1.1]
+        "scale": [0.5, 1.0]
       },
       "augmentations": {
         "HorizontalFlip": {
@@ -125,7 +126,7 @@
       }
     },
     "test": {
-      "datasets": ["HCOCO"],
+      "datasets": ["HCOCO", "HAdobe5k", "Hday2night", "HFlickr"],
       "type": "HDataset",
       "augmentations": {
         "Resize": {
@@ -142,6 +143,6 @@
   },
   "gpus": "",
   "num_epochs": 180,
-  "project_name": "gml_harm_testing",
+  "project_name": "gml_harm",
   "experiments_folder": "../diplom_exps"
 }
