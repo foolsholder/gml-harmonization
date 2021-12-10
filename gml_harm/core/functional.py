@@ -28,30 +28,26 @@ def psnr(outputs: torch.Tensor,
     :param targets: [batch_size, C, H, W]
     :return: [batch_size,]
     """
+    batch_size = outputs.shape[0]
     mse_res = mse(outputs, targets, reduce=False)
-    psnr_res = 10 * torch.log10(max_pixel_value ** 2 / mse_res)
+    max_values = targets.view(batch_size, -1).max(dim=1).item()
+    psnr_res = 10 * torch.log10(max_values ** 2 / mse_res)
     return torch.mean(psnr_res)
 
 
 def fmse(outputs: torch.Tensor,
            targets_and_masks: Tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
     batch_size = outputs.size(0)
+    channels = outputs.size(1)
     (targets, masks) = targets_and_masks
     mask_l2_square = masks * ((outputs - targets) ** 2)
     mask_l2_square = mask_l2_square.view(batch_size, -1)
     mask_l2_square = torch.sum(mask_l2_square, dim=1)
 
     masks = masks.view(batch_size, -1)
-    denominator = torch.sum(masks, dim=1)
+    denominator = channels * torch.sum(masks, dim=1)
 
-    zero32 = np.float32(0)
-
-    denominator_mask = denominator > zero32
-    inv_denominator_mask = torch.logical_not(denominator_mask)
-    add_values = inv_denominator_mask.float()
-    denominator = denominator + add_values
     fmse = torch.divide(mask_l2_square, denominator)
-    fmse = torch.where(denominator_mask, fmse, mask_l2_square)
     return torch.mean(fmse)
 
 
@@ -59,12 +55,13 @@ def fn_mse(outputs: torch.Tensor,
            targets_and_masks: Tuple[torch.Tensor, torch.Tensor],
            min_area=100.) -> torch.Tensor:
     batch_size = outputs.size(0)
+    channels = outputs.size(1)
     (targets, masks) = targets_and_masks
     mask_l2_square = masks * ((outputs - targets) ** 2)
     mask_l2_square = mask_l2_square.view(batch_size, -1)
     mask_l2_square = torch.sum(mask_l2_square, dim=1)
 
     masks = masks.view(batch_size, -1)
-    denominator = torch.clamp_min(torch.sum(masks, dim=1), min_area)
+    denominator = channels * torch.clamp_min(torch.sum(masks, dim=1), min_area)
     fn_mse = mask_l2_square / denominator
     return torch.mean(fn_mse)

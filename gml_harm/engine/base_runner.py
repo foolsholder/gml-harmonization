@@ -2,21 +2,13 @@ from abc import ABC
 
 from catalyst import dl
 
-from catalyst.core.callback import Callback
-from catalyst.core.logger import ILogger
-from catalyst.core.trial import ITrial
-from catalyst.engines import IEngine
 from catalyst.typing import (
-    Criterion,
     Model,
-    Optimizer,
-    Scheduler,
 )
 from collections import OrderedDict
 
-from typing import Dict, Union, Optional, OrderedDict as ORDType, List, Any
+from typing import Dict, OrderedDict as ORDType, Union
 from torch.utils.data import DataLoader, DistributedSampler, Dataset
-from torch.nn.parallel import DistributedDataParallel
 
 from ..data.transforms import ToOriginalScale
 
@@ -30,32 +22,39 @@ class BaseRunner(dl.Runner, ABC):
             self.to_original_scale = ToOriginalScale()
 
     def get_engine(self) -> dl.IEngine:
+        if self._engine is not None:
+            return self._engine
         return dl.DistributedDataParallelEngine(sync_bn=self._sync_bn)
 
     def train(
         self,
         *,
-        model: Model,
-        raw_datasets: ORDType[str, Dict[str, Dataset]],
+        raw_datasets: ORDType[str, Dict[str, Dataset]] = None,
+        engine: Union["IEngine", str] = None,
+        loaders: "OrderedDict[str, DataLoader]" = None,
         **kwargs
     ) -> None:
-        assert isinstance(model, dict)
+        # assert isinstance(model, dict)
         self._raw_datasets = raw_datasets
-        self.engine = self.get_engine()
+        self._engine = engine if engine is not None else self.get_engine()
+        loaders = loaders if loaders is not None else self.get_loaders('smth')
         super(BaseRunner, self).train(
-            model=model,
-            loaders=self.get_loaders('smth'),
+            engine=self._engine,
+            loaders=loaders,
             **kwargs
         )
 
     def get_loaders(self, stage: str) -> "OrderedDict[str, DataLoader]":
+        if self._loaders is not None:
+            return super(BaseRunner, self).get_loaders(stage=stage)
         loaders = OrderedDict()
         for k, v in self._raw_datasets.items():
             sampler = DistributedSampler(
                 v['dataset'],
-                num_replicas=self.engine.world_size,
-                rank=self.engine.rank,
-                shuffle=(k == 'train')
+                num_replicas=self._engine.world_size,
+                rank=self._engine.rank,
+                shuffle=(k == 'train'),
+                drop_last=(k == 'train')
             )
             loaders[k] = DataLoader(
                 dataset=v['dataset'],
