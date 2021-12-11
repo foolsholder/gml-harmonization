@@ -4,9 +4,12 @@ from collections import OrderedDict
 from torch import nn
 from typing import List, Any, Optional, OrderedDict as ORDType
 
+
+from .idih_entities import FeatureAggregation
 from .idih_entities import BaseEncoder, BaseDecoder
-from ..backbones.swin2.swin2 import SwinV2
 from ..backbones.utils import create_backbone
+
+from ..mask_fusion.utils import create_mask_fusion
 
 
 class DIH(nn.Module):
@@ -21,7 +24,7 @@ class DIH(nn.Module):
             activation: nn.Module = nn.ELU,
             backbone_start_connect_pos: int = -1,
             backbone_channels: Optional[List[int]] = None,
-            aggregation_mode: str = '',
+            aggregation_mode: str = 'catc',
             image_fusion: bool = True
     ):
         super(DIH, self).__init__()
@@ -47,8 +50,11 @@ class DIH(nn.Module):
             image_fusion=image_fusion
         )
 
-    def forward(self, comp_image: torch.Tensor, mask: torch.Tensor):
-        enc_output = self.encoder(comp_image, mask, backbone_feats=None)
+    def forward(self,
+                comp_image: torch.Tensor,
+                mask: torch.Tensor,
+                backbone_feats: Optional[List[torch.Tensor]] = None):
+        enc_output = self.encoder(comp_image, mask, backbone_feats=backbone_feats)
         harm_image = self.decoder(enc_output, comp_image, mask)
         return harm_image
 
@@ -57,13 +63,16 @@ class BackbonedDIH(nn.Module):
     def __init__(
             self,
             backbone_cfg: ORDType[str, Any],
+            mask_fusion_cfg: str,
             **kwargs
     ):
         super(BackbonedDIH, self).__init__()
         self.backbone = create_backbone(backbone_cfg)
+        self.mask_fusion_bb = create_mask_fusion(mask_fusion_cfg)
         self.base = DIH(**kwargs)
 
     def forward(self, comp_image: torch.Tensor, mask: torch.Tensor):
-        backbone_feats = self.backbone(comp_image, mask)
+        image = self.mask_fusion_bb(comp_image, mask)
+        backbone_feats = self.backbone(image, mask)
         harm_image = self.base(comp_image, mask, backbone_feats)
         return harm_image

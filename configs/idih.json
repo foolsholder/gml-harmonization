@@ -1,10 +1,7 @@
 {
   "model": {
     "type": "DIH",
-    "base": {},
-    "backbone": {
-      "use": false
-    }
+    "base": {}
   },
   "trainer": {
     "type": "SupervisedTrainer",

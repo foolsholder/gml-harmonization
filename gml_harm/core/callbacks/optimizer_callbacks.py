@@ -9,7 +9,8 @@ def _get_grad_norm(model: torch.nn.Module):
     gn = 0.
     for par in model.parameters():
         wn += np.sum(par.detach().cpu().data.numpy().ravel() ** 2)
-        gn += np.sum(par.grad.detach().cpu().data.numpy().ravel() ** 2)
+        if par.grad is not None:
+            gn += np.sum(par.grad.detach().cpu().data.numpy().ravel() ** 2)
     return np.sqrt(wn), np.sqrt(gn)
 
 

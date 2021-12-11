@@ -1,28 +1,38 @@
 {
   "model": {
     "type": "DIH",
-    "base": {},
+    "base": {
+      "backbone_start_connect_pos": 2,
+      "backbone_channels": [96, 192, 384, 768],
+      "aggregation_mode": "cat"
+    },
     "backbone": {
-      "use": true
-    }
+      "type": "Swin",
+      "pretrained": "../pretrained_checkpoints/swin_tiny_patch4_window7_512x512_ade20k.pth",
+      "out_indices": [0, 1, 2, 3]
+    },
+    "mask_fusion_bb": "rgb"
   },
   "trainer": {
     "type": "SupervisedTrainer",
-    "restore_scale": true
+    "restore_scale": true,
+    "sync_bn": true
   },
   "optimizers": {
     "model_optimizer": {
-      "type": "AdamW",
+      "type": "Adam",
       "groups": [
         {
           "params": "base",
-          "lr": 2e-3,
-          "weight_decay": 1e-4
+          "lr": 1e-3
         },
         {
           "params": "backbone",
-          "lr": 1e-4,
-          "weight_decay": 1e-4
+          "lr": 1e-4
+        },
+        {
+          "params": "mask_fusion_bb",
+          "lr": 1e-3
         }
       ]
     }
@@ -111,14 +121,14 @@
       "UnsplashFull": ""
     },
     "train": {
-      "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
+      "datasets": ["HCOCO", "HAdobe5k", "Hday2night", "HFlickr"],
       "type": "HDataset",
       "crop": {
         "PadIfNeeded": true,
         "type": "RandomResizedCrop",
         "height": 256,
         "width": 256,
-        "scale": [0.5, 1.1]
+        "scale": [0.5, 1.0]
       },
       "augmentations": {
         "HorizontalFlip": {
@@ -130,7 +140,7 @@
       }
     },
     "test": {
-      "datasets": ["HCOCO", "HAdobe5k", "HFlickr", "Hday2night"],
+      "datasets": ["HCOCO", "HAdobe5k", "Hday2night", "HFlickr"],
       "type": "HDataset",
       "augmentations": {
         "Resize": {
@@ -142,7 +152,7 @@
         "target": "image"
       }
     },
-    "batch_size": 160,
+    "batch_size": 100,
     "num_workers": 40
   },
   "gpus": "",

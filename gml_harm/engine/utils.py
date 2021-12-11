@@ -127,7 +127,8 @@ def get_optimizers(
                     submodel = getattr(model, param_group_name)
                 else:
                     assert model_dict_instance
-                    submodel = model[param_group_name]
+                    # submodel = model[param_group_name]
+                    submodel = model.pop(param_group_name)
             else:
                 if not model_nn_instance:
                     submodel = model['model']
