@@ -14,12 +14,13 @@ from ..data.transforms import ToOriginalScale
 
 
 class BaseRunner(dl.Runner, ABC):
-    def __init__(self, restore_scale=True, sync_bn=True):
+    def __init__(self, restore_scale=True, sync_bn=True, seed=1337):
         super(BaseRunner, self).__init__()
         self.to_original_scale = None
         self._sync_bn = sync_bn
         if restore_scale is not None:
             self.to_original_scale = ToOriginalScale()
+        self._seed = seed
 
     def get_engine(self) -> dl.IEngine:
         if self._engine is not None:

@@ -1,8 +1,9 @@
 import torch
+import os
 
 from catalyst import dl
 from collections import OrderedDict
-from copy import copy
+from copy import copy, deepcopy
 from torch.optim import Optimizer
 from typing import (
     Dict,
@@ -49,6 +50,7 @@ def get_criterions(
         "fMSECriterion": fMSECriterion,
         "FNMSECriterion": FNMSECriterion
     }
+    criterion_cfg = deepcopy(criterion_cfg)
     crits: ORDType[str, torch.nn.Module] = OrderedDict()
     for crit_name, crit_params in criterion_cfg.items():
         crit_typename = crit_params.pop('type')
@@ -179,7 +181,7 @@ def get_checkpoints_callbacks(
         if not use:
             continue
 
-        params['logdir'] = experiment_folder  + '/' + 'checkpoints'
+        params['logdir'] = os.path.join(experiment_folder, 'checkpoints', params['metric_key'])
         chp_callback = dl.CheckpointCallback(**params)
         checkpoint_callbacks += [chp_callback]
     return checkpoint_callbacks

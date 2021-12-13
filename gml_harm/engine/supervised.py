@@ -22,7 +22,7 @@ class SupervisedTrainer(BaseRunner):
 
         if self.to_original_scale is not None:
             to_original_scale = self.to_original_scale
-            outputs_255 = to_original_scale(outputs)
+            outputs_255 = to_original_scale(outputs.detach())
             outputs_255 = torch.clip(outputs_255, 0, 255.)
             targets_255 = to_original_scale(targets)
             self.batch.update({

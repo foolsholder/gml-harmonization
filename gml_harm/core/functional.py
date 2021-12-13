@@ -30,7 +30,7 @@ def psnr(outputs: torch.Tensor,
     """
     batch_size = outputs.shape[0]
     mse_res = mse(outputs, targets, reduce=False)
-    max_values = targets.view(batch_size, -1).max(dim=1).item()
+    max_values = targets.view(batch_size, -1).max(dim=1).values
     psnr_res = 10 * torch.log10(max_values ** 2 / mse_res)
     return torch.mean(psnr_res)
 
