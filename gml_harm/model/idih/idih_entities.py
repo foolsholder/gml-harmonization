@@ -220,5 +220,5 @@ class BaseDecoder(nn.Module):
         harm_image = self.to_rgb(x)
         if self.image_fusion:
             attention_map = (3 * self.conv_attention(x)).sigmoid()
-            harm_image = attention_map * harm_image + (1.0 - attention_map) * comp_image
+            harm_image = attention_map * comp_image + (1.0 - attention_map) * harm_image
         return harm_image
