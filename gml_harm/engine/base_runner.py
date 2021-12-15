@@ -2,9 +2,6 @@ from abc import ABC
 
 from catalyst import dl
 
-from catalyst.typing import (
-    Model,
-)
 from collections import OrderedDict
 
 from typing import Dict, OrderedDict as ORDType, Union

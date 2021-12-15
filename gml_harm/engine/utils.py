@@ -26,7 +26,8 @@ from ..core.callbacks.metric_callbacks import (
     PSNRCallback,
     fMSECallback,
     FNMSECallback,
-    IdentityCallback
+    IdentityCallback,
+    ResNetPLCallback
 )
 
 from ..core.callbacks.optimizer_callbacks import (
@@ -72,7 +73,8 @@ def get_metric_callbacks(
         "FNMSECallback": FNMSECallback,
         "fMSECallback": fMSECallback,
         "IdentityCallback": IdentityCallback,
-        "MetricAggregationCallback": MetricAggregationCallback
+        "MetricAggregationCallback": MetricAggregationCallback,
+        "ResNetPLCallback": ResNetPLCallback
     }
 
     for metric_idx, callback_dct in enumerate(metric_callbacks_cfg):

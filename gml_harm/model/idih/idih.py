@@ -2,7 +2,7 @@ import torch
 
 from collections import OrderedDict
 from torch import nn
-from typing import List, Any, Optional, OrderedDict as ORDType
+from typing import List, Any, Optional, OrderedDict as ORDType, Sequence
 
 
 from .idih_entities import FeatureAggregation
@@ -19,10 +19,13 @@ class DIH(nn.Module):
             in_channels: int = 4,
             channels: int = 64,
             max_channels: int = 512,
+            strides: Sequence[int] = (2, 2, 2, 2, 2, 2, 2),
             enc_norm_layer: Optional[nn.Module] = nn.BatchNorm2d,
+            enc_norm_layer_start_pos: int = 2,
             enc_masked_norm: bool = False,
             dec_norm_layer: Optional[nn.Module] = nn.BatchNorm2d,
             dec_masked_norm: bool = False,
+            dec_attention_start_pos: int = -1,
             activation: nn.Module = nn.ELU,
             backbone_start_connect_pos: int = -1,
             backbone_channels: Optional[List[int]] = None,
@@ -30,12 +33,15 @@ class DIH(nn.Module):
             image_fusion: bool = True
     ):
         super(DIH, self).__init__()
+        assert depth == len(strides)
         self.encoder = BaseEncoder(
             depth=depth,
             in_channels=in_channels,
             channels=channels,
             max_channels=max_channels,
+            strides=strides,
             norm_layer=enc_norm_layer,
+            norm_layer_start_pos=enc_norm_layer_start_pos,
             masked_norm=enc_masked_norm,
             activation=activation,
             backbone_start_connect_pos=backbone_start_connect_pos,
@@ -46,8 +52,10 @@ class DIH(nn.Module):
         self.decoder = BaseDecoder(
             encoder_channels=encoder_channels,
             depth=depth,
+            strides=strides[::-1],
             norm_layer=dec_norm_layer,
             masked_norm=dec_masked_norm,
+            attention_start_pos=dec_attention_start_pos,
             activation=activation,
             image_fusion=image_fusion
         )

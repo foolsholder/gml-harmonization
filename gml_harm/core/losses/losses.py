@@ -3,7 +3,7 @@ import torch
 from torch import nn
 from typing import Tuple
 
-from .functional import mse, psnr, fn_mse
+from gml_harm.core.functional import mse, psnr, fn_mse
 
 
 class MSE(nn.Module):
