@@ -2,14 +2,6 @@
   "model": {
     "type": "DIH",
     "base": {
-      "depth": 6,
-      "strides": [2, 2, 2, 2, 2, 1],
-      "enc_norm_layer": "BatchNorm2d",
-      "enc_norm_layer_start_pos": 1,
-      "enc_masked_norm": false,
-      "dec_norm_layer": "BatchNorm2d",
-      "dec_masked_norm": false,
-      "dec_attention_start_pos": 3,
       "backbone_start_connect_pos": 2,
       "backbone_channels": [96, 192, 384, 768],
       "aggregation_mode": "cat"
@@ -88,34 +80,13 @@
       "type": "CriterionCallback",
       "input_key": "outputs",
       "target_key": "targets_and_masks",
-      "metric_key": "FNMSE",
+      "metric_key": "loss_FNMSE",
       "criterion_key": "FNMSE"
-    },
-    {
-      "type": "ResNetPLCallback",
-      "input_key": "outputs",
-      "target_key": "targets",
-      "metric_key": "Resnet50PL",
-      "resnet_cfg": {
-        "depth": 50,
-        "dilations": [1, 1, 2, 4],
-        "strides": [1, 2, 1, 1],
-        "pretrained": "../pretrained_checkpoints/r50-d8_512x512_ade20k_dmnet.pth"
-      }
-    },
-    {
-      "type": "MetricAggregationCallback",
-      "metric_key": "loss",
-      "metrics": {
-        "Resnet50PL": 30,
-        "FNMSE": 1
-      },
-      "mode": "weighted_sum"
     }
   ],
   "optimizers_callbacks": [
     {
-      "metric_key": "loss",
+      "metric_key": "loss_FNMSE",
       "model_key": "model",
       "optimizer_key": "model_optimizer"
     }
