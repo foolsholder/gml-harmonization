@@ -2,7 +2,7 @@ import torch
 
 from copy import copy
 from torch import nn
-from typing import Union, Tuple, Optional, List, Sequence
+from typing import Union, Tuple, Optional, List, Sequence, Dict
 
 
 class ConvNormAct(nn.Module):
@@ -228,7 +228,7 @@ class BaseDecoder(nn.Module):
             encoder_output: List[torch.Tensor],
             comp_image: torch.Tensor,
             mask: torch.Tensor
-    ):
+    ) -> Dict[str, torch.Tensor]:
         """
         it's guarantee that len(encoder_output) == len(self.deconv_list) by __init__
         """
@@ -237,8 +237,14 @@ class BaseDecoder(nn.Module):
             skip_connection = encoder_output.pop()
             x = block(x, mask) + skip_connection
         x = self.deconv_list[-1](x, mask)
-        harm_image = self.to_rgb(x)
+        predicted_image = self.to_rgb(x)
         if self.image_fusion:
             attention_map = (3 * self.conv_attention(x)).sigmoid()
-            harm_image = attention_map * comp_image + (1.0 - attention_map) * harm_image
-        return harm_image
+            harm_image = attention_map * comp_image + (1.0 - attention_map) * predicted_image
+        else:
+            harm_image = predicted_image
+        output_dict: Dict[str, torch.Tensor] = {
+            'predicted_image': predicted_image,
+            'harm_image': harm_image
+        }
+        return output_dict

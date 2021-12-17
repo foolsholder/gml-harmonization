@@ -1,5 +1,5 @@
 import torch
-from typing import Any, Mapping
+from typing import Any, Mapping, Dict
 
 from .base_runner import BaseRunner
 
@@ -11,9 +11,14 @@ class SupervisedTrainer(BaseRunner):
         targets = batch['targets']
 
         model = self.model['model']
-        outputs = model(images, masks)
+        output_dict: Dict[str, torch.Tensor] = model(images, masks)
+
+        predicted_image = output_dict['predicted_image']
+        harm_image = output_dict['harm_image']
+        outputs = harm_image
 
         self.batch = {
+            'predicted_images': predicted_image,
             'outputs': outputs,
             'targets': targets,
             'masks': masks,

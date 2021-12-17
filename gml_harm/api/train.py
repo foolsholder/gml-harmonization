@@ -66,9 +66,10 @@ def train_model(model, cfg: Dict[str, Any]):
         valid_loader='valid',
         num_epochs=cfg['num_epochs'],
         callbacks=all_callbacks,
+        seed=cfg['seed'],
         loggers={
-            # "wandb": dl.WandbLogger(project=project_name, name=experiment_name),
-            "tensorboard": dl.TensorboardLogger(logdir=experiment_folder),
+            #"wandb": dl.WandbLogger(project=project_name, name=experiment_name, log_batch_metrics=True),
+            "tensorboard": dl.TensorboardLogger(logdir=experiment_folder, log_batch_metrics=True),
             "csv": dl.CSVLogger(logdir=experiment_folder),
             # "console": dl.ConsoleLogger(),
             # "mlflow": dl.MLflowLogger(experiment=experiment_name, run=project_name)

@@ -11,9 +11,10 @@ class SimpleInputFusion(nn.Module):
         self.feat_agg = FeatureAggregation(3, 1, mode='cat')
         self.block = nn.Sequential(
             nn.Conv2d(4, 8, kernel_size=1),
-            nn.LeakyReLU(0.2),
             nn.BatchNorm2d(8),
-            nn.Conv2d(8, 3, kernel_size=1)
+            nn.LeakyReLU(0.2),
+            nn.Conv2d(8, 3, kernel_size=1),
+            nn.BatchNorm2d(3)
         )
 
     def forward(self, a, b):

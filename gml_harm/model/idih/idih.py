@@ -2,7 +2,7 @@ import torch
 
 from collections import OrderedDict
 from torch import nn
-from typing import List, Any, Optional, OrderedDict as ORDType, Sequence
+from typing import List, Any, Optional, OrderedDict as ORDType, Sequence, Dict
 
 
 from .idih_entities import FeatureAggregation
@@ -81,8 +81,8 @@ class BackbonedDIH(nn.Module):
         self.mask_fusion_bb = create_mask_fusion(mask_fusion_cfg)
         self.base = DIH(**kwargs)
 
-    def forward(self, comp_image: torch.Tensor, mask: torch.Tensor):
+    def forward(self, comp_image: torch.Tensor, mask: torch.Tensor) -> Dict[str, torch.Tensor]:
         image = self.mask_fusion_bb(comp_image, mask)
         backbone_feats = self.backbone(image, mask)
-        harm_image = self.base(comp_image, mask, backbone_feats)
-        return harm_image
+        output_dict = self.base(comp_image, mask, backbone_feats)
+        return output_dict

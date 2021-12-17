@@ -11,7 +11,7 @@ from typing import Any, Dict, Union, List, Callable
 from skimage import io
 
 from .base_dataset import ABCDataset
-from.transforms import LookUpTable
+from.transforms import LookUpTableAUG
 
 
 class SSHTrainDataset(ABCDataset):

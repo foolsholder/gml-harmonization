@@ -1,21 +1,19 @@
 import torch
-import trilinear_cpp
 
 import numpy as np
 
 from torch import nn
+from typing import Union
+from pathlib import Path
+
+from .lut_entities import TrilinearInterpolation
 
 
 class LookUpTable3D(nn.Module):
-    def __init__(self, dim=33):
+    def __init__(self, lut_path: Union[Path, str]):
         super(LookUpTable3D, self).__init__()
-        if dim == 33:
-            file = open("IdentityLUT33.txt", 'r')
-        elif dim == 64:
-            file = open("IdentityLUT64.txt", 'r')
-        lines = file.readlines()
-        buffer = np.zeros((3, dim, dim, dim), dtype=np.float32)
-
+        buffer = np.load(str(lut_path))
+        """
         for i in range(0, dim):
             for j in range(0, dim):
                 for k in range(0, dim):
@@ -24,10 +22,11 @@ class LookUpTable3D(nn.Module):
                     buffer[0, i, j, k] = float(x[0])
                     buffer[1, i, j, k] = float(x[1])
                     buffer[2, i, j, k] = float(x[2])
-        self.LUT = nn.Parameter(torch.from_numpy(buffer).requires_grad_(True))
+        """
+        self.register_buffer('LUT', torch.from_numpy(buffer))
         self.TrilinearInterpolation = TrilinearInterpolation()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        self.LUT = self.LUT.to(x)
         _, output = self.TrilinearInterpolation(self.LUT, x)
-        # self.LUT, output = self.TrilinearInterpolation(self.LUT, x)
         return output

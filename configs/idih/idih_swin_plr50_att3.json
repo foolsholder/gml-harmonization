@@ -127,6 +127,13 @@
       "metric_key": "PSNR_255",
       "minimize": false,
       "save_n_best": 1
+    },
+    {
+      "use": true,
+      "loader_key": "valid",
+      "metric_key": "MSE_255",
+      "minimize": true,
+      "save_n_best": 1
     }
   ],
   "schedulers": {

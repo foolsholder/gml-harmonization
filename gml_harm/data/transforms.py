@@ -4,11 +4,15 @@ import torch
 
 import numpy as np
 
-from typing import Tuple
+from typing import Tuple, List, Union
+from pathlib import Path
 
+from albumentations import DualTransform
 from albumentations.imgaug.transforms import DualIAATransform
 from albumentations import to_tuple
 import imgaug.augmenters as iaa
+
+from .lut.lookuptable import LookUpTable3D
 
 
 class IAAAffine2(DualIAATransform):
@@ -105,16 +109,43 @@ class ToOriginalScale(torch.nn.Module):
         """
         tensor.shape == [batch_size, 3, H, W]
         """
-        self.to(tensor.device)
+        self.to(tensor)
         tensor = tensor * self.std + self.mean
         return tensor
 
 
-class LookUpTable:
-    def __init__(self):
-        pass
+class LookUpTableAUG(DualTransform):
+    def __init__(
+        self,
+        luts_dir: str='../np_store/',
+        always_apply: bool=False,
+        p: float=0.5,
+    ):
+        super(LookUpTableAUG, self).__init__(always_apply, p)
+        self.luts: List[LookUpTableAUG] = []
+        for fname in Path(luts_dir).iterdir():
+            self.luts += [LookUpTable3D(fname)]
 
-    def __call__(self,
-                 content: np.array,
-                 reference: np.array) -> Tuple[np.array, np.array]:
-        return content, reference
+    def apply_to_mask(self, img, **params):
+        return img
+
+    def apply(self, img, lut_idx=-1, **params):
+        """
+        input img_max_value = 255.
+        output img_max_value = 255.
+        """
+        if lut_idx == -1:
+            return img
+        lut = self.luts[lut_idx]
+        img = img.astype(np.float32) / 255.
+        tensor = torch.FloatTensor(img).permute(2, 0, 1)[None]
+        tensor = lut(tensor)
+        img = tensor[0].permute(1, 2, 0).data.numpy()
+        img = np.around(np.clip(img, 0, 1) * 255, decimals=0)
+        img = img.astype(np.uint8)
+        return img
+
+    def get_params(self):
+        return {
+            "lut_idx": np.random.randint(len(self.luts))
+        }

@@ -1,15 +1,12 @@
 {
   "model": {
     "type": "DIH",
-    "base": {
-      "depth": 7
-    }
+    "base": {}
   },
   "trainer": {
     "type": "SupervisedTrainer",
     "restore_scale": true,
-    "sync_bn": true,
-    "seed": 1337
+    "sync_bn": true
   },
   "optimizers": {
     "model_optimizer": {
@@ -17,9 +14,7 @@
       "groups": [
         {
           "params": "model",
-          "lr": 1e-3,
-          "betas": [0.9, 0.999],
-          "eps": 1e-8
+          "lr": 1.5e-3
         }
       ]
     }
@@ -85,18 +80,26 @@
       "metric_key": "PSNR_255",
       "minimize": false,
       "save_n_best": 1
+    },
+    {
+      "use": true,
+      "loader_key": "valid",
+      "metric_key": "MSE_255",
+      "minimize": true,
+      "save_n_best": 1
     }
   ],
   "schedulers": {
     "model_optimizer": {
       "type": "MultiStepLR",
       "milestones": [160, 175],
-      "gamma": 0.1,
+      "gamma": 0.2,
       "mode": "epoch"
     }
   },
   "data": {
     "dataset_paths": {
+      "HVIDIT": "../data/HVIDIT",
       "HCOCO": "../data/HCOCO",
       "HAdobe5k": "../data/HAdobe5k_resized1024",
       "HFlickr": "../data/HFlickr",
@@ -118,9 +121,41 @@
         "scale": [0.5, 1.0]
       },
       "augmentations": {
+        "LookUpTableAUG": {
+          "p": 0.8,
+          "luts_dir": "../np_store/"
+        },
         "HorizontalFlip": {
           "p": 0.5
+        },
+        "Rotate": {
+          "p": 0.5,
+          "limit": 14
+        },
+        "RGBShift": {
+          "p": 0.5,
+          "r_shift_limit": 7,
+          "g_shift_limit": 7,
+          "b_shift_limit": 7
+        },
+        "CLAHE": {
+          "p": 0.5
+        },
+        "RandomBrightnessContrast" : {
+          "p": 0.5,
+          "brightness_limit": 0.1,
+          "contrast_limit": 0.1
+        },
+        "HueSaturationValue": {
+          "p": 0.5,
+          "hue_shift_limit": 7,
+          "sat_shift_limit": 14,
+          "val_shift_limit": 7
         }
+      },
+      "to_tensor_transforms": {
+        "Normalize": {},
+        "ToTensorV2": {}
       },
       "additional_targets": {
         "target": "image"
@@ -135,6 +170,10 @@
           "width": 256
         }
       },
+      "to_tensor_transforms": {
+        "Normalize": {},
+        "ToTensorV2": {}
+      },
       "additional_targets": {
         "target": "image"
       }
@@ -143,6 +182,7 @@
     "num_workers": 40
   },
   "gpus": "",
+  "seed": 0,
   "num_epochs": 180,
   "project_name": "gml_harm",
   "experiments_folder": "../diplom_exps"

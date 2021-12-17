@@ -1,9 +1,6 @@
 from abc import ABC
-
 from catalyst import dl
-
 from collections import OrderedDict
-
 from typing import Dict, OrderedDict as ORDType, Union
 from torch.utils.data import DataLoader, DistributedSampler, Dataset
 
@@ -11,13 +8,14 @@ from ..data.transforms import ToOriginalScale
 
 
 class BaseRunner(dl.Runner, ABC):
-    def __init__(self, restore_scale=True, sync_bn=True, seed=1337):
+    def __init__(self,
+                 restore_scale: bool=True,
+                 sync_bn: bool=True):
         super(BaseRunner, self).__init__()
         self.to_original_scale = None
         self._sync_bn = sync_bn
         if restore_scale is not None:
             self.to_original_scale = ToOriginalScale()
-        self._seed = seed
 
     def get_engine(self) -> dl.IEngine:
         if self._engine is not None:
@@ -44,7 +42,7 @@ class BaseRunner(dl.Runner, ABC):
 
     def get_loaders(self, stage: str) -> "OrderedDict[str, DataLoader]":
         if self._loaders is not None:
-            return super(BaseRunner, self).get_loaders(stage=stage)
+            return self._loaders
         loaders = OrderedDict()
         for k, v in self._raw_datasets.items():
             sampler = DistributedSampler(

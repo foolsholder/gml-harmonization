@@ -1,2 +1,7 @@
 .idea/
 __pycache__/
+trilinear_cpp/dist/
+trilinear_cpp/build/
+trilinear_cpp/trilinear.egg-info
+trilinear_cpp/trilinear.cpython*
+notebooks/

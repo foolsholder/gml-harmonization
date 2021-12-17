@@ -24,15 +24,15 @@
       "groups": [
         {
           "params": "base",
-          "lr": 1e-3
+          "lr": 2e-3
         },
         {
           "params": "backbone",
-          "lr": 1e-4
+          "lr": 2e-4
         },
         {
           "params": "mask_fusion_bb",
-          "lr": 1e-3
+          "lr": 2e-3
         }
       ]
     }
@@ -98,18 +98,26 @@
       "metric_key": "PSNR_255",
       "minimize": false,
       "save_n_best": 1
+    },
+    {
+      "use": true,
+      "loader_key": "valid",
+      "metric_key": "MSE_255",
+      "minimize": true,
+      "save_n_best": 1
     }
   ],
   "schedulers": {
     "model_optimizer": {
       "type": "MultiStepLR",
-      "milestones": [160, 175],
+      "milestones": [80, 95],
       "gamma": 0.1,
       "mode": "epoch"
     }
   },
   "data": {
     "dataset_paths": {
+      "HVIDIT": "../data/HVIDIT",
       "HCOCO": "../data/HCOCO",
       "HAdobe5k": "../data/HAdobe5k_resized1024",
       "HFlickr": "../data/HFlickr",
@@ -135,6 +143,10 @@
           "p": 0.5
         }
       },
+      "to_tensor_transforms": {
+        "Normalize": {},
+        "ToTensorV2": {}
+      },
       "additional_targets": {
         "target": "image"
       }
@@ -148,6 +160,10 @@
           "width": 256
         }
       },
+      "to_tensor_transforms": {
+        "Normalize": {},
+        "ToTensorV2": {}
+      },
       "additional_targets": {
         "target": "image"
       }
@@ -156,7 +172,8 @@
     "num_workers": 40
   },
   "gpus": "",
-  "num_epochs": 180,
+  "seed": 1337,
+  "num_epochs": 100,
   "project_name": "gml_harm",
   "experiments_folder": "../diplom_exps"
 }
