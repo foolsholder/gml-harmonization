@@ -27,20 +27,20 @@
     "sync_bn": true
   },
   "optimizers": {
-    "model_optimizer": {
+    "optim": {
       "type": "Adam",
       "groups": [
         {
           "params": "base",
-          "lr": 1e-3
+          "lr": 1.5e-3
         },
         {
           "params": "backbone",
-          "lr": 1e-4
+          "lr": 2e-4
         },
         {
           "params": "mask_fusion_bb",
-          "lr": 1e-3
+          "lr": 1.5e-3
         }
       ]
     }
@@ -98,8 +98,12 @@
       "metric_key": "Resnet50PL",
       "resnet_cfg": {
         "depth": 50,
-        "dilations": [1, 1, 2, 4],
-        "strides": [1, 2, 1, 1],
+        "dilations": [
+          1, 1, 2, 4
+        ],
+        "strides": [
+          1, 2, 1, 1
+        ],
         "pretrained": "../pretrained_checkpoints/r50-d8_512x512_ade20k_dmnet.pth"
       }
     },
@@ -117,7 +121,8 @@
     {
       "metric_key": "loss",
       "model_key": "model",
-      "optimizer_key": "model_optimizer"
+      "grad_clip_norm": 30.0,
+      "optimizer_key": "optim"
     }
   ],
   "checkpoints_callbacks": [
@@ -136,16 +141,28 @@
       "save_n_best": 1
     }
   ],
-  "schedulers": {
-    "model_optimizer": {
+  "schedulers": [
+    {
+      "optimizer_key": "optim",
+      "type": "LinearLR",
+      "start_factor": 1e-2,
+      "end_factor": 1.0,
+      "total_iters": 500,
+      "mode": "batch"
+    },
+    {
+      "optimizer_key": "optim",
       "type": "MultiStepLR",
-      "milestones": [160, 175],
+      "milestones": [
+        160, 175
+      ],
       "gamma": 0.1,
       "mode": "epoch"
     }
-  },
+  ],
   "data": {
     "dataset_paths": {
+      "HVIDIT": "../data/HVIDIT",
       "HCOCO": "../data/HCOCO",
       "HAdobe5k": "../data/HAdobe5k_resized1024",
       "HFlickr": "../data/HFlickr",
@@ -167,9 +184,17 @@
         "scale": [0.5, 1.0]
       },
       "augmentations": {
+        "LookUpTableAUG": {
+          "p": 0.8,
+          "luts_dir": "../np_store/"
+        },
         "HorizontalFlip": {
           "p": 0.5
         }
+      },
+      "to_tensor_transforms": {
+        "Normalize": {},
+        "ToTensorV2": {}
       },
       "additional_targets": {
         "target": "image"
@@ -184,14 +209,19 @@
           "width": 256
         }
       },
+      "to_tensor_transforms": {
+        "Normalize": {},
+        "ToTensorV2": {}
+      },
       "additional_targets": {
         "target": "image"
       }
     },
-    "batch_size": 100,
-    "num_workers": 40
+    "batch_size": 10,
+    "num_workers": 8
   },
   "gpus": "",
+  "seed": 0,
   "num_epochs": 180,
   "project_name": "gml_harm",
   "experiments_folder": "../diplom_exps"

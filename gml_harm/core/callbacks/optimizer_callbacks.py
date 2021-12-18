@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 
+from typing import Optional
 from catalyst import dl
 
 
@@ -15,6 +16,10 @@ def _get_grad_norm(model: torch.nn.Module):
 
 
 class OptimizerCallback(dl.OptimizerCallback):
+    def __init__(self, grad_clip_norm: Optional[float] = None, *args, **kwargs):
+        super(OptimizerCallback, self).__init__(*args, **kwargs)
+        self._grad_clip_norm = grad_clip_norm
+
     def on_batch_end(self, runner: "IRunner"):
         if runner.is_train_loader:
             self._accumulation_counter += 1
@@ -29,6 +34,10 @@ class OptimizerCallback(dl.OptimizerCallback):
 
             if self.grad_clip_fn is not None:
                 self.grad_clip_fn(self.model.parameters())
+            if self._grad_clip_norm is not None and gn > self._grad_clip_norm:
+                torch.nn.utils.clip_grad_norm(self.model.parameters(),
+                                              max_norm=self._grad_clip_norm,
+                                              norm_type=2.)
 
             if need_gradient_step:
                 runner.engine.optimizer_step(loss, self.model, self.optimizer)
