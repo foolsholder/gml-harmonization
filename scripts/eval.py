@@ -37,7 +37,14 @@ def main():
     model = create_model(cfg['model'])
     model['model'].load_state_dict(torch.load(args.ckpt)['model_model_state_dict'])
 
-    datasets = cfg['data']['test']['datasets']
+    datasets = [
+        'HCOCO',
+        'HAdobe5k',
+        'HFlickr',
+        'Hday2night',
+        #'RealHM',
+        #'HVIDIT'
+    ]
     res = {}
     for dataset in datasets:
         cfg['data']['test']['datasets'] = [dataset]

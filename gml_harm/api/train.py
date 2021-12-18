@@ -46,7 +46,14 @@ def train_model(model, cfg: Dict[str, Any]):
     for callbacks_dict in [metric_callbacks, opts_callbacks, scheds_callbacks, checkpoints_callbacks]:
         all_callbacks.extend(callbacks_dict)
 
-    datasets = get_raw_datasets(cfg['data'])
+    if torch.cuda.device_count() > 1:
+        datasets = get_raw_datasets(cfg['data'])
+        loaders = None
+        engine = None # it's defined in trainer by default
+    else:
+        datasets = None
+        loaders = get_loaders(cfg['data'])
+        engine = dl.DeviceEngine()
 
     trainer.train(
         model=model,
@@ -54,12 +61,15 @@ def train_model(model, cfg: Dict[str, Any]):
         scheduler=scheds,
         criterion=crits,
         raw_datasets=datasets,
+        loaders=loaders,
+        engine=engine,
         valid_loader='valid',
         num_epochs=cfg['num_epochs'],
         callbacks=all_callbacks,
+        seed=cfg['seed'],
         loggers={
-            # "wandb": dl.WandbLogger(project=project_name, name=experiment_name),
-            "tensorboard": dl.TensorboardLogger(logdir=experiment_folder),
+            #"wandb": dl.WandbLogger(project=project_name, name=experiment_name, log_batch_metrics=True),
+            "tensorboard": dl.TensorboardLogger(logdir=experiment_folder, log_batch_metrics=True),
             "csv": dl.CSVLogger(logdir=experiment_folder),
             # "console": dl.ConsoleLogger(),
             # "mlflow": dl.MLflowLogger(experiment=experiment_name, run=project_name)

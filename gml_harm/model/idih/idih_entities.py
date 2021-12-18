@@ -2,7 +2,7 @@ import torch
 
 from copy import copy
 from torch import nn
-from typing import Union, Tuple, Optional, List
+from typing import Union, Tuple, Optional, List, Sequence, Dict
 
 
 class ConvNormAct(nn.Module):
@@ -16,18 +16,29 @@ class ConvNormAct(nn.Module):
             norm_layer: Optional[nn.Module] = nn.BatchNorm2d,
             activation: nn.Module = nn.ELU,
             conv_layer: nn.Module = nn.Conv2d,
-            masked_norm: bool = False
+            masked_norm: bool = False,
+            use_attention: bool = False,
     ):
         super(ConvNormAct, self).__init__()
         self.conv = conv_layer(in_channels, out_channels, kernel_size, stride, padding)
         self.norm = norm_layer(out_channels) if norm_layer is not None else nn.Identity()
         self.act = activation(inplace=True)
         self.masked_norm = masked_norm
+        self.use_attention = use_attention
+        if use_attention:
+            self.attention = nn.Sequential(
+                nn.Conv2d(out_channels, out_channels, kernel_size=1),
+                nn.Sigmoid()
+            )
 
     def forward(self, x, mask=None):
         if self.masked_norm:
-            return self.act(self.norm(self.conv(x), mask))
-        return self.act(self.norm(self.conv(x)))
+            out = self.act(self.norm(self.conv(x), mask))
+        else:
+            out = self.act(self.norm(self.conv(x)))
+        if self.use_attention:
+            out = self.attention(out) * out
+        return out
 
 
 class FeatureAggregation(nn.Module):
@@ -62,7 +73,9 @@ class BaseEncoder(nn.Module):
             in_channels: int = 4,
             channels: int = 64,
             max_channels: int = 512,
+            strides: Sequence[int] = (2, 2, 2, 2, 2, 2, 2),
             norm_layer: Optional[nn.Module] = nn.BatchNorm2d,
+            norm_layer_start_pos: int = 2,
             masked_norm: bool = False,
             activation: nn.Module = nn.ELU,
             backbone_start_connect_pos: int = -1,
@@ -81,8 +94,9 @@ class BaseEncoder(nn.Module):
             out_channels=channels,
             kernel_size=4,
             padding=1,
-            stride=2,
-            norm_layer=None,
+            stride=strides[0],
+            norm_layer=None if (norm_layer_start_pos == -1 or
+                                norm_layer_start_pos > 0) else norm_layer,
             activation=activation,
             conv_layer=nn.Conv2d,
             masked_norm=masked_norm
@@ -93,8 +107,9 @@ class BaseEncoder(nn.Module):
             out_channels=channels,
             kernel_size=4,
             padding=1,
-            stride=2,
-            norm_layer=None,
+            stride=strides[1],
+            norm_layer=None if (norm_layer_start_pos == -1 or
+                                norm_layer_start_pos > 1) else norm_layer,
             activation=activation,
             conv_layer=nn.Conv2d,
             masked_norm=masked_norm
@@ -124,8 +139,9 @@ class BaseEncoder(nn.Module):
                 out_channels=out_channels,
                 kernel_size=4,
                 padding=int(block_idx + 1 < depth),
-                stride=2,
-                norm_layer=norm_layer,
+                stride=strides[block_idx],
+                norm_layer=None if (norm_layer_start_pos == -1 or
+                                    norm_layer_start_pos > block_idx) else norm_layer,
                 activation=activation,
                 conv_layer=nn.Conv2d,
                 masked_norm=masked_norm
@@ -165,8 +181,10 @@ class BaseDecoder(nn.Module):
             self,
             encoder_channels: List[int],
             depth: int = 7,
+            strides: Sequence[int] = (2, 2, 2, 2, 2, 2, 2),
             norm_layer: Optional[nn.Module] = nn.BatchNorm2d,
             masked_norm: bool = False,
+            attention_start_pos: int = -1,
             activation: nn.Module = nn.ELU,
             image_fusion: bool = True
     ):
@@ -189,12 +207,14 @@ class BaseDecoder(nn.Module):
                     in_channels=in_channels,
                     out_channels=out_channels,
                     kernel_size=4,
-                    stride=2,
+                    stride=strides[block_idx],
                     padding=int(block_idx > 0),
                     norm_layer=norm_layer,
                     activation=activation,
                     conv_layer=nn.ConvTranspose2d,
-                    masked_norm=masked_norm
+                    masked_norm=masked_norm,
+                    use_attention=False if (attention_start_pos == -1 or
+                                            attention_start_pos > block_idx) else True,
                 )
             )
             in_channels = out_channels
@@ -208,7 +228,7 @@ class BaseDecoder(nn.Module):
             encoder_output: List[torch.Tensor],
             comp_image: torch.Tensor,
             mask: torch.Tensor
-    ):
+    ) -> Dict[str, torch.Tensor]:
         """
         it's guarantee that len(encoder_output) == len(self.deconv_list) by __init__
         """
@@ -217,8 +237,14 @@ class BaseDecoder(nn.Module):
             skip_connection = encoder_output.pop()
             x = block(x, mask) + skip_connection
         x = self.deconv_list[-1](x, mask)
-        harm_image = self.to_rgb(x)
+        predicted_image = self.to_rgb(x)
         if self.image_fusion:
             attention_map = (3 * self.conv_attention(x)).sigmoid()
-            harm_image = attention_map * comp_image + (1.0 - attention_map) * harm_image
-        return harm_image
+            harm_image = attention_map * comp_image + (1.0 - attention_map) * predicted_image
+        else:
+            harm_image = predicted_image
+        output_dict: Dict[str, torch.Tensor] = {
+            'predicted_image': predicted_image,
+            'harm_image': harm_image
+        }
+        return output_dict

@@ -12,7 +12,8 @@ from albumentations import (
     HueSaturationValue,
     RandomBrightnessContrast,
     OpticalDistortion,
-    PadIfNeeded
+    PadIfNeeded,
+    Rotate
 )
 
 from albumentations.pytorch import ToTensorV2
@@ -32,12 +33,13 @@ from typing import (
 
 from .base_dataset import HDataset, ABCDataset
 from .compose_data import ComposedDataset
+from .lut_dataset import LutDataset
 from .ssh_dataset import SSHTrainDataset, SSHTestDataset
-from .transforms import IAAAffine2, IAAPerspective2
+from .transforms import IAAAffine2, IAAPerspective2, LookUpTableAUG
 
 
 def get_single_crop(
-        crop_cfg: Dict[str, Union[float, int]],
+        crop_cfg: ORDType[str, Union[float, int]],
         additional_targets: Optional[Dict[str, str]] = None) -> Compose:
     available_crop: Dict[str, Type[BasicTransform]] = {
         'RandomResizedCrop': RandomResizedCrop,
@@ -69,25 +71,16 @@ def get_single_crop(
     return crop
 
 
-def get_to_tensor_transforms(additional_targets: Dict[str, str]) -> Compose:
-    to_tensor_transforms: Compose = Compose(
-        [
-            Normalize(),
-            ToTensorV2()
-        ],
-        p=1.0,
-        additional_targets=additional_targets
-    )
-    return to_tensor_transforms
-
-
-def get_augmentations(augmentations_cfg: ORDType[str, Dict[str, str]],
-                  additional_targets: Dict[str, str]) -> Compose:
+def get_augmentations(
+        augmentations_cfg: ORDType[str, Dict[str, Union[str, float, int]]],
+        additional_targets: Dict[str, str]
+    ) -> Compose:
     """
     creates simple Sequential Composition of augmentations
     doesn't provide any opportunities to use Compose([..., Compose(...), ...])
     """
     augmentations_dict = {
+        "Rotate": Rotate,
         "Resize": Resize,
         "RandomResizedCrop": RandomResizedCrop,
         "HorizontalFlip": HorizontalFlip,
@@ -98,7 +91,10 @@ def get_augmentations(augmentations_cfg: ORDType[str, Dict[str, str]],
         "OpticalDistortion": OpticalDistortion,
         "IAAAffine2": IAAAffine2,
         "IAAPerspective2": IAAPerspective2,
-        "PadIfNeeded": PadIfNeeded
+        "PadIfNeeded": PadIfNeeded,
+        "Normalize": Normalize,
+        "ToTensorV2": ToTensorV2,
+        "LookUpTableAUG": LookUpTableAUG
     }
     augmentations_list: List[BasicTransform] = []
     for aug_type_name, aug_params in augmentations_cfg.items():
@@ -116,7 +112,8 @@ def get_dataset(data_cfg: ORDType[str, Any], split: str) -> Dataset:
     available_datasets: Dict[str, Type[ABCDataset]] = {
         'HDataset': HDataset,
         'SSHTrainDataset': SSHTrainDataset,
-        'SSHTestDataset': SSHTestDataset
+        'SSHTestDataset': SSHTestDataset,
+        'LutDataset': LutDataset
     }
     dataset_cfg = data_cfg[split]
     dataset_cfg = deepcopy(dataset_cfg)
@@ -128,11 +125,10 @@ def get_dataset(data_cfg: ORDType[str, Any], split: str) -> Dataset:
 
     additional_targets: Dict[str, str] = dataset_cfg.pop('additional_targets')
 
-    augmentations_dict: Dict[str, Compose] = {
-        'to_tensor_transforms': get_to_tensor_transforms(additional_targets)
-    }
+    augmentations_dict: Dict[str, Compose] = {}
 
-    for aug_name in ['augmentations', 'geometric_augmentations', 'color_augmentations']:
+    aug_components = ['to_tensor_transforms', 'augmentations', 'geometric_augmentations', 'color_augmentations']
+    for aug_name in aug_components:
         if aug_name in dataset_cfg:
             augmentations_cfg = dataset_cfg.pop(aug_name)
             augmentations_dict[aug_name] = get_augmentations(augmentations_cfg, additional_targets)

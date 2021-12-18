@@ -18,7 +18,7 @@ def init_experiment(args):
         cfg['project_name'] = args.project_name
 
     if args.seed != -1:
-        cfg['trainer']['seed'] = args.seed
+        cfg['seed'] = args.seed
 
     if args.num_epochs != -1:
         cfg['num_epochs'] = args.num_epochs

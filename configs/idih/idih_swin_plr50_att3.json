@@ -1,7 +1,25 @@
 {
   "model": {
     "type": "DIH",
-    "base": {}
+    "base": {
+      "depth": 6,
+      "strides": [2, 2, 2, 2, 2, 1],
+      "enc_norm_layer": "BatchNorm2d",
+      "enc_norm_layer_start_pos": 1,
+      "enc_masked_norm": false,
+      "dec_norm_layer": "BatchNorm2d",
+      "dec_masked_norm": false,
+      "dec_attention_start_pos": 3,
+      "backbone_start_connect_pos": 2,
+      "backbone_channels": [96, 192, 384, 768],
+      "aggregation_mode": "cat"
+    },
+    "backbone": {
+      "type": "Swin",
+      "pretrained": "../pretrained_checkpoints/swin_tiny_patch4_window7_512x512_ade20k.pth",
+      "out_indices": [0, 1, 2, 3]
+    },
+    "mask_fusion_bb": "rgb"
   },
   "trainer": {
     "type": "SupervisedTrainer",
@@ -9,11 +27,19 @@
     "sync_bn": true
   },
   "optimizers": {
-    "model_optimizer": {
+    "optim": {
       "type": "Adam",
       "groups": [
         {
-          "params": "model",
+          "params": "base",
+          "lr": 1.5e-3
+        },
+        {
+          "params": "backbone",
+          "lr": 2e-4
+        },
+        {
+          "params": "mask_fusion_bb",
           "lr": 1.5e-3
         }
       ]
@@ -62,15 +88,41 @@
       "type": "CriterionCallback",
       "input_key": "outputs",
       "target_key": "targets_and_masks",
-      "metric_key": "loss_FNMSE",
+      "metric_key": "FNMSE",
       "criterion_key": "FNMSE"
+    },
+    {
+      "type": "ResNetPLCallback",
+      "input_key": "predicted_images",
+      "target_key": "targets",
+      "metric_key": "Resnet50PL",
+      "resnet_cfg": {
+        "depth": 50,
+        "dilations": [
+          1, 1, 2, 4
+        ],
+        "strides": [
+          1, 2, 1, 1
+        ],
+        "pretrained": "../pretrained_checkpoints/r50-d8_512x512_ade20k_dmnet.pth"
+      }
+    },
+    {
+      "type": "MetricAggregationCallback",
+      "metric_key": "loss",
+      "metrics": {
+        "Resnet50PL": 30,
+        "FNMSE": 1
+      },
+      "mode": "weighted_sum"
     }
   ],
   "optimizers_callbacks": [
     {
-      "metric_key": "loss_FNMSE",
+      "metric_key": "loss",
       "model_key": "model",
-      "optimizer_key": "model_optimizer"
+      "grad_clip_norm": 30.0,
+      "optimizer_key": "optim"
     }
   ],
   "checkpoints_callbacks": [
@@ -89,14 +141,25 @@
       "save_n_best": 1
     }
   ],
-  "schedulers": {
-    "model_optimizer": {
+  "schedulers": [
+    {
+      "optimizer_key": "optim",
+      "type": "LinearLR",
+      "start_factor": 1e-2,
+      "end_factor": 1.0,
+      "total_iters": 500,
+      "mode": "batch"
+    },
+    {
+      "optimizer_key": "optim",
       "type": "MultiStepLR",
-      "milestones": [160, 175],
-      "gamma": 0.2,
+      "milestones": [
+        160, 175
+      ],
+      "gamma": 0.1,
       "mode": "epoch"
     }
-  },
+  ],
   "data": {
     "dataset_paths": {
       "HVIDIT": "../data/HVIDIT",
@@ -127,30 +190,6 @@
         },
         "HorizontalFlip": {
           "p": 0.5
-        },
-        "Rotate": {
-          "p": 0.5,
-          "limit": 14
-        },
-        "RGBShift": {
-          "p": 0.5,
-          "r_shift_limit": 7,
-          "g_shift_limit": 7,
-          "b_shift_limit": 7
-        },
-        "CLAHE": {
-          "p": 0.5
-        },
-        "RandomBrightnessContrast" : {
-          "p": 0.5,
-          "brightness_limit": 0.1,
-          "contrast_limit": 0.1
-        },
-        "HueSaturationValue": {
-          "p": 0.5,
-          "hue_shift_limit": 7,
-          "sat_shift_limit": 14,
-          "val_shift_limit": 7
         }
       },
       "to_tensor_transforms": {
@@ -178,8 +217,8 @@
         "target": "image"
       }
     },
-    "batch_size": 100,
-    "num_workers": 40
+    "batch_size": 10,
+    "num_workers": 8
   },
   "gpus": "",
   "seed": 0,

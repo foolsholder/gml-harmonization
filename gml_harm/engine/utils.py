@@ -21,12 +21,14 @@ from .self_supervised import SelfSupervisedTrainer
 from .hvqvae_runner import HVQVAERunner
 
 from catalyst.dl import MetricAggregationCallback, CriterionCallback
+
 from ..core.callbacks.metric_callbacks import (
     MSECallback,
     PSNRCallback,
     fMSECallback,
     FNMSECallback,
-    IdentityCallback
+    IdentityCallback,
+    ResNetPLCallback
 )
 
 from ..core.callbacks.optimizer_callbacks import (
@@ -72,7 +74,8 @@ def get_metric_callbacks(
         "FNMSECallback": FNMSECallback,
         "fMSECallback": fMSECallback,
         "IdentityCallback": IdentityCallback,
-        "MetricAggregationCallback": MetricAggregationCallback
+        "MetricAggregationCallback": MetricAggregationCallback,
+        "ResNetPLCallback": ResNetPLCallback
     }
 
     for metric_idx, callback_dct in enumerate(metric_callbacks_cfg):
@@ -189,7 +192,7 @@ def get_checkpoints_callbacks(
 
 def get_scheduler(
         optimizers: ORDType[str, Optimizer],
-        schedulers_cfg: ORDType[str, Any]
+        schedulers_cfg: List[ORDType[str, Any]]
     ) -> Tuple[ORDType[str, Any], List[dl.SchedulerCallback]]:
     """
     :param optimizers: Dict[str, Optimizer]
@@ -199,13 +202,25 @@ def get_scheduler(
     scheds: ORDType[str, Any] = OrderedDict()
     scheds_callbacks: List[dl.SchedulerCallback] = []
 
-    for opt_name, sched_params in schedulers_cfg.items():
-        dct_params = copy(sched_params)
+    opt_count: Dict[str, int] = {}
+
+    for dct_params in schedulers_cfg:
+        dct_params = copy(dct_params)
+        opt_name = dct_params.pop('optimizer_key')
+
+        if opt_name in opt_count:
+            opt_count[opt_name] += 1
+        else:
+            opt_count[opt_name] = 1
+        val = opt_count[opt_name]
+
         sched_type_name = dct_params.pop('type')
         mode = dct_params.pop('mode')
         sched_type = getattr(torch.optim.lr_scheduler, sched_type_name)
         sched = sched_type(optimizer=optimizers[opt_name], **dct_params)
-        scheds.update({opt_name: sched})
-        scheds_callbacks += [dl.SchedulerCallback(mode=mode, scheduler_key=opt_name)]
+
+        sched_key = opt_name + f'_{val}'
+        scheds.update({sched_key: sched})
+        scheds_callbacks += [dl.SchedulerCallback(mode=mode, scheduler_key=sched_key)]
 
     return scheds, scheds_callbacks

@@ -1,7 +1,8 @@
 from catalyst import dl
-from typing import Optional, Union, Iterable, Dict
+from typing import Optional, Union, Iterable, Dict, OrderedDict as ORDType, Any
 
 from ..metrics import MSEMetric, PSNRMetric, fMSEMetric, FNMSEMetric, IdentityMetric
+from ..losses.perceptual import ResNetPLMetric
 
 
 class IdentityCallback(dl.FunctionalBatchMetricCallback):
@@ -96,6 +97,28 @@ class FNMSECallback(dl.FunctionalBatchMetricCallback):
                                compute_on_call=compute_on_call,
                                metric_key=metric_key,
                                **kwargs),
+            input_key=input_key,
+            target_key=target_key,
+            log_on_batch=log_on_batch)
+
+
+class ResNetPLCallback(dl.FunctionalBatchMetricCallback):
+    def __init__(self,
+                 input_key: Union[str, Iterable[str], Dict[str, str]],
+                 target_key: Union[str, Iterable[str], Dict[str, str]],
+                 metric_key: str,
+                 resnet_cfg: ORDType[str, Any],
+                 prefix: Optional[str] = None,
+                 suffix: Optional[str] = None,
+                 compute_on_call: bool = True,
+                 log_on_batch: bool = True, **kwargs):
+        super(ResNetPLCallback, self).__init__(
+            metric=ResNetPLMetric(prefix=prefix,
+                                  suffix=suffix,
+                                  compute_on_call=compute_on_call,
+                                  metric_key=metric_key,
+                                  resnet_cfg=resnet_cfg,
+                                  **kwargs),
             input_key=input_key,
             target_key=target_key,
             log_on_batch=log_on_batch)

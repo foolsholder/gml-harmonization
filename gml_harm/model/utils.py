@@ -24,7 +24,7 @@ def _dfs_correct_cfg(submodel_cfg: ORDType[str, Any]) -> None:
             _dfs_correct_cfg(v)
         elif isinstance(v, str):
             if 'norm_layer' in k:
-                order_keys += [k, 'norm_layer']
+                order_keys += [(k, 'norm_layer')]
 
     for k, type in order_keys:
         if type == 'norm_layer':
@@ -38,7 +38,7 @@ def create_model(model_cfg: ORDType[str, Any]) -> ORDType[str, nn.Module]:
         'DIH': create_dih
     }
     model_cfg = deepcopy(model_cfg)
-
+    _dfs_correct_cfg(model_cfg)
     model_type_name = model_cfg.pop('type')
     create_nn = possible_models[model_type_name]
     model: OrderedDict[str, nn.Module] = create_nn(model_cfg)

@@ -3,13 +3,12 @@
     "type": "DIH",
     "base": {
       "backbone_start_connect_pos": 2,
-      "backbone_channels": [96, 192, 384, 768],
+      "backbone_channels": [64, 128, 256, 512],
       "aggregation_mode": "cat"
     },
     "backbone": {
-      "type": "Swin",
-      "pretrained": "../pretrained_checkpoints/swin_tiny_patch4_window7_512x512_ade20k.pth",
-      "out_indices": [0, 1, 2, 3]
+      "type": "CSwin",
+      "pretrained": "../pretrained_checkpoints/cswin_tiny_upernet_ade20k.pth"
     },
     "mask_fusion_bb": "rgb"
   },
@@ -19,22 +18,24 @@
     "sync_bn": true
   },
   "optimizers": {
-    "model_optimizer": {
-      "type": "Adam",
+    "optim": {
+      "type": "AdamW",
       "groups": [
         {
           "params": "base",
-          "lr": 1e-3
+          "lr": 1.5e-3
         },
         {
           "params": "backbone",
-          "lr": 1e-4
+          "lr": 2e-4
         },
         {
           "params": "mask_fusion_bb",
-          "lr": 1e-3
+          "lr": 1.5e-3
         }
-      ]
+      ],
+      "amsgrad": true,
+      "weight_decay": 1e-3
     }
   },
   "criterions": {
@@ -88,7 +89,7 @@
     {
       "metric_key": "loss_FNMSE",
       "model_key": "model",
-      "optimizer_key": "model_optimizer"
+      "optimizer_key": "optim"
     }
   ],
   "checkpoints_callbacks": [
@@ -98,18 +99,37 @@
       "metric_key": "PSNR_255",
       "minimize": false,
       "save_n_best": 1
+    },
+    {
+      "use": true,
+      "loader_key": "valid",
+      "metric_key": "MSE_255",
+      "minimize": true,
+      "save_n_best": 1
     }
   ],
-  "schedulers": {
-    "model_optimizer": {
+  "schedulers": [
+    {
+      "optimizer_key": "optim",
+      "type": "LinearLR",
+      "start_factor": 1e-2,
+      "end_factor": 1.0,
+      "total_iters": 500,
+      "mode": "batch"
+    },
+    {
+      "optimizer_key": "optim",
       "type": "MultiStepLR",
-      "milestones": [160, 175],
+      "milestones": [
+        160, 175
+      ],
       "gamma": 0.1,
       "mode": "epoch"
     }
-  },
+  ],
   "data": {
     "dataset_paths": {
+      "HVIDIT": "../data/HVIDIT",
       "HCOCO": "../data/HCOCO",
       "HAdobe5k": "../data/HAdobe5k_resized1024",
       "HFlickr": "../data/HFlickr",
@@ -135,6 +155,10 @@
           "p": 0.5
         }
       },
+      "to_tensor_transforms": {
+        "Normalize": {},
+        "ToTensorV2": {}
+      },
       "additional_targets": {
         "target": "image"
       }
@@ -148,14 +172,19 @@
           "width": 256
         }
       },
+      "to_tensor_transforms": {
+        "Normalize": {},
+        "ToTensorV2": {}
+      },
       "additional_targets": {
         "target": "image"
       }
     },
-    "batch_size": 100,
-    "num_workers": 40
+    "batch_size": 10,
+    "num_workers": 8
   },
   "gpus": "",
+  "seed": 0,
   "num_epochs": 180,
   "project_name": "gml_harm",
   "experiments_folder": "../diplom_exps"

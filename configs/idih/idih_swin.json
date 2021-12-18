@@ -1,7 +1,17 @@
 {
   "model": {
     "type": "DIH",
-    "base": {}
+    "base": {
+      "backbone_start_connect_pos": 2,
+      "backbone_channels": [96, 192, 384, 768],
+      "aggregation_mode": "cat"
+    },
+    "backbone": {
+      "type": "Swin",
+      "pretrained": "../pretrained_checkpoints/swin_tiny_patch4_window7_512x512_ade20k.pth",
+      "out_indices": [0, 1, 2, 3]
+    },
+    "mask_fusion_bb": "rgb"
   },
   "trainer": {
     "type": "SupervisedTrainer",
@@ -10,12 +20,19 @@
   },
   "optimizers": {
     "model_optimizer": {
-      "type": "AdamW",
+      "type": "Adam",
       "groups": [
         {
           "params": "base",
-          "lr": 2e-3,
-          "weight_decay": 1e-4
+          "lr": 2e-3
+        },
+        {
+          "params": "backbone",
+          "lr": 2e-4
+        },
+        {
+          "params": "mask_fusion_bb",
+          "lr": 2e-3
         }
       ]
     }
@@ -81,18 +98,26 @@
       "metric_key": "PSNR_255",
       "minimize": false,
       "save_n_best": 1
+    },
+    {
+      "use": true,
+      "loader_key": "valid",
+      "metric_key": "MSE_255",
+      "minimize": true,
+      "save_n_best": 1
     }
   ],
   "schedulers": {
     "model_optimizer": {
       "type": "MultiStepLR",
-      "milestones": [160, 175],
+      "milestones": [80, 95],
       "gamma": 0.1,
       "mode": "epoch"
     }
   },
   "data": {
     "dataset_paths": {
+      "HVIDIT": "../data/HVIDIT",
       "HCOCO": "../data/HCOCO",
       "HAdobe5k": "../data/HAdobe5k_resized1024",
       "HFlickr": "../data/HFlickr",
@@ -116,20 +141,11 @@
       "augmentations": {
         "HorizontalFlip": {
           "p": 0.5
-        },
-        "IAAPerspective2": {
-          "p": 1.0,
-          "scale": [0.0, 0.06]
-        },
-        "IAAAffine2": {
-          "scale" : [0.8, 1.0],
-          "rotate" : [-35, 35],
-          "shear": [-0.1, 0.1],
-          "p": 1.0
-        },
-        "OpticalDistortion": {
-          "p": 0.5
         }
+      },
+      "to_tensor_transforms": {
+        "Normalize": {},
+        "ToTensorV2": {}
       },
       "additional_targets": {
         "target": "image"
@@ -144,6 +160,10 @@
           "width": 256
         }
       },
+      "to_tensor_transforms": {
+        "Normalize": {},
+        "ToTensorV2": {}
+      },
       "additional_targets": {
         "target": "image"
       }
@@ -152,7 +172,8 @@
     "num_workers": 40
   },
   "gpus": "",
-  "num_epochs": 180,
+  "seed": 1337,
+  "num_epochs": 100,
   "project_name": "gml_harm",
   "experiments_folder": "../diplom_exps"
 }
