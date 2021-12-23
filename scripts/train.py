@@ -11,6 +11,10 @@ def main():
     cfg = init_experiment(args)
 
     model = create_model(cfg['model'])
+
+    if args.resume:
+        cfg['resume'] = args.resume
+
     train_model(model, cfg)
 
 
@@ -36,6 +40,7 @@ def parse_args():
                         help='You can override default random seed=1337 for training')
     parser.add_argument('--num_epochs', type=int, default=-1)
     parser.add_argument('--without_ckpt', type=bool, default=False)
+    parser.add_argument('--resume', type=str, default='')
 
     return parser.parse_args()
 

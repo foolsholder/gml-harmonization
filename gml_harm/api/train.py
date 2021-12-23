@@ -5,7 +5,7 @@ import torch.distributed as dist
 
 from catalyst import dl
 from collections import OrderedDict
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from ..engine.utils import (
     create_trainer,
@@ -18,6 +18,7 @@ from ..engine.utils import (
 
 )
 from ..data.utils import get_loaders, get_raw_datasets
+from .eval import evaluate_model
 
 
 def train_model(model, cfg: Dict[str, Any]):
@@ -55,6 +56,10 @@ def train_model(model, cfg: Dict[str, Any]):
         loaders = get_loaders(cfg['data'])
         engine = dl.DeviceEngine()
 
+    resume: Optional[str] = None
+    if 'resume' in cfg:
+        resume = cfg['resume']
+
     trainer.train(
         model=model,
         optimizer=opts,
@@ -75,4 +80,5 @@ def train_model(model, cfg: Dict[str, Any]):
             # "mlflow": dl.MLflowLogger(experiment=experiment_name, run=project_name)
         },
         verbose=1,
+        resume=resume
     )

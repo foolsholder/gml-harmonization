@@ -97,7 +97,9 @@ class BaseDataset(ABCDataset):
     def check_augmented_sample(self, aug_output: Dict[str, np.array]) -> bool:
         if self.keep_without_mask > 0. and np.random.rand() < self.keep_without_mask:
             return True
-        return aug_output['mask'].sum() > 1.0
+        value = aug_output['mask'].sum()
+        #h, w = aug_output['mask'].shape[:2]
+        return value > 1.0# and value <= (0.4 * h * w)
 
 
 class HDataset(BaseDataset):
