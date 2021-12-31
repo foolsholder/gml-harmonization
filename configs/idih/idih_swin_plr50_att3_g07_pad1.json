@@ -1,0 +1,229 @@
+{
+  "model": {
+    "type": "DIH",
+    "base": {
+      "depth": 7,
+      "strides": [2, 2, 2, 2, 2, 1, 1],
+      "paddings": [1, 1, 1, 1, 1, 1, 1],
+      "enc_norm_layer": "BatchNorm2d",
+      "enc_norm_layer_start_pos": 1,
+      "enc_masked_norm": false,
+      "dec_norm_layer": "BatchNorm2d",
+      "dec_masked_norm": false,
+      "dec_attention_start_pos": 3,
+      "backbone_start_connect_pos": 2,
+      "backbone_channels": [96, 192, 384, 768],
+      "aggregation_mode": "cat"
+    },
+    "backbone": {
+      "type": "Swin",
+      "pretrained": "../pretrained_checkpoints/swin_tiny_patch4_window7_512x512_ade20k.pth",
+      "out_indices": [0, 1, 2, 3]
+    },
+    "mask_fusion_bb": "rgb"
+  },
+  "trainer": {
+    "type": "SupervisedTrainer",
+    "restore_scale": true,
+    "sync_bn": true
+  },
+  "optimizers": {
+    "optim": {
+      "type": "AdamW",
+      "groups": [
+        {
+          "params": "base",
+          "lr": 1.5e-3
+        },
+        {
+          "params": "backbone",
+          "lr": 2e-4
+        },
+        {
+          "params": "mask_fusion_bb",
+          "lr": 1.5e-3
+        }
+      ]
+    }
+  },
+  "criterions": {
+    "MSE": {
+      "type": "MSECriterion"
+    },
+    "PSNR_255": {
+      "type": "PSNRCriterion",
+      "max_pixel_value": 255.0
+    },
+    "fMSE": {
+      "type": "fMSECriterion"
+    },
+    "FNMSE": {
+      "type": "FNMSECriterion",
+      "min_area": 100.0
+    }
+  },
+  "metric_callbacks": [
+    {
+      "type": "CriterionCallback",
+      "input_key": "outputs_255",
+      "target_key": "targets_255",
+      "metric_key": "MSE_255",
+      "criterion_key": "MSE"
+    },
+    {
+      "type": "CriterionCallback",
+      "input_key": "outputs_255",
+      "target_key": "targets_255",
+      "metric_key": "PSNR_255",
+      "criterion_key": "PSNR_255"
+    },
+    {
+      "type": "CriterionCallback",
+      "input_key": "outputs_255",
+      "target_key": "targets_and_masks_255",
+      "metric_key": "fMSE_255",
+      "criterion_key": "fMSE",
+      "eval_only": true
+    },
+    {
+      "type": "CriterionCallback",
+      "input_key": "outputs",
+      "target_key": "targets_and_masks",
+      "metric_key": "FNMSE",
+      "criterion_key": "FNMSE"
+    },
+    {
+      "type": "ResNetPLCallback",
+      "input_key": "predicted_images",
+      "target_key": "targets",
+      "metric_key": "Resnet50PL",
+      "resnet_cfg": {
+        "depth": 50,
+        "dilations": [
+          1, 1, 2, 4
+        ],
+        "strides": [
+          1, 2, 1, 1
+        ],
+        "pretrained": "../pretrained_checkpoints/r50-d8_512x512_ade20k_dmnet.pth"
+      }
+    },
+    {
+      "type": "MetricAggregationCallback",
+      "metric_key": "loss",
+      "metrics": {
+        "Resnet50PL": 30,
+        "FNMSE": 1
+      },
+      "mode": "weighted_sum"
+    }
+  ],
+  "optimizers_callbacks": [
+    {
+      "metric_key": "loss",
+      "model_key": "model",
+      "grad_clip_norm": 0.5,
+      "optimizer_key": "optim"
+    }
+  ],
+  "checkpoints_callbacks": [
+    {
+      "use": true,
+      "loader_key": "valid",
+      "metric_key": "PSNR_255",
+      "minimize": false,
+      "save_n_best": 1
+    },
+    {
+      "use": true,
+      "loader_key": "valid",
+      "metric_key": "MSE_255",
+      "minimize": true,
+      "save_n_best": 1
+    }
+  ],
+  "schedulers": [
+    {
+      "optimizer_key": "optim",
+      "type": "LinearLR",
+      "start_factor": 1e-4,
+      "end_factor": 1.0,
+      "total_iters": 1000,
+      "mode": "batch"
+    },
+    {
+      "optimizer_key": "optim",
+      "type": "MultiStepLR",
+      "milestones": [
+        160, 175
+      ],
+      "gamma": 0.4,
+      "mode": "epoch"
+    }
+  ],
+  "data": {
+    "dataset_paths": {
+      "HVIDIT": "../data/HVIDIT",
+      "HCOCO": "../data/HCOCO",
+      "HAdobe5k": "../data/HAdobe5k_resized1024",
+      "HFlickr": "../data/HFlickr",
+      "Hday2night": "../data/Hday2night",
+      "RealHM": "../data/RealHM_resized1024",
+
+      "MSCOCO": "../data/MSCOCO/train/data",
+      "UnsplashLite": "../data/UnsplashLite/data",
+      "UnsplashFull": ""
+    },
+    "train": {
+      "datasets": ["HCOCO", "HAdobe5k", "Hday2night", "HFlickr"],
+      "type": "HDataset",
+      "crop": {
+        "PadIfNeeded": true,
+        "type": "RandomResizedCrop",
+        "height": 256,
+        "width": 256,
+        "scale": [0.5, 1.0]
+      },
+      "augmentations": {
+        "LookUpTableAUG": {
+          "p": 0.5,
+          "luts_dir": "../np_store/"
+        },
+        "HorizontalFlip": {
+          "p": 0.5
+        }
+      },
+      "to_tensor_transforms": {
+        "Normalize": {},
+        "ToTensorV2": {}
+      },
+      "additional_targets": {
+        "target": "image"
+      }
+    },
+    "test": {
+      "datasets": ["HCOCO", "HAdobe5k", "Hday2night", "HFlickr"],
+      "type": "HDataset",
+      "augmentations": {
+        "Resize": {
+          "height": 256,
+          "width": 256
+        }
+      },
+      "to_tensor_transforms": {
+        "Normalize": {},
+        "ToTensorV2": {}
+      },
+      "additional_targets": {
+        "target": "image"
+      }
+    },
+    "batch_size": 10,
+    "num_workers": 8
+  },
+  "gpus": "",
+  "seed": 0,
+  "num_epochs": 180,
+  "project_name": "gml_harm",
+  "experiments_folder": "../diplom_exps"
+}
