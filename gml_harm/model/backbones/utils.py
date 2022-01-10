@@ -6,13 +6,15 @@ import torch.nn
 from .swin.utils import create_swin_transformer
 from .resnet.utils import create_resnet
 from .cswin.utils import create_cswin_transformer
+from .segformer.utils import create_segformer
 
 
 def create_backbone(backbone_cfg: ORDType[str, Any]) -> torch.nn.Module:
     possible_bb: Dict[str, Callable[[ORDType[str, Any]], torch.nn.Module]] = {
         "Swin": create_swin_transformer,
         "CSwin": create_cswin_transformer,
-        "Resnet": create_resnet
+        "Resnet": create_resnet,
+        "SegFormer": create_segformer
     }
     type_name = backbone_cfg.pop('type')
     create_bb = possible_bb[type_name]

@@ -4,6 +4,7 @@ import torch
 from gml_harm.utils import init_experiment
 from gml_harm.model.utils import create_model
 from gml_harm.api.train import train_model
+from gml_harm.api.extra import train_swa
 
 
 def main():
@@ -15,7 +16,10 @@ def main():
     if args.resume:
         cfg['resume'] = args.resume
 
-    train_model(model, cfg)
+    if args.swa:
+        train_swa(model, cfg)
+    else:
+        train_model(model, cfg)
 
 
 def parse_args():
@@ -41,6 +45,7 @@ def parse_args():
     parser.add_argument('--num_epochs', type=int, default=-1)
     parser.add_argument('--without_ckpt', type=bool, default=False)
     parser.add_argument('--resume', type=str, default='')
+    parser.add_argument('--swa', type=bool, default=False)
 
     return parser.parse_args()
 
