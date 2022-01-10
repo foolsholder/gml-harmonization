@@ -38,5 +38,5 @@ class SegFormer(nn.Module):
         self.backbone = create_segbb(bb_cfg)
         self.decode_head = create_seghead(head_cfg)
 
-    def forward(self, x) -> List[nn.Tensor]:
+    def forward(self, x, mask=None) -> List[torch.Tensor]:
         return self.decode_head(self.backbone(x))

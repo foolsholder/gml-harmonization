@@ -198,12 +198,11 @@ class OverlapPatchEmbed(nn.Module):
 
 
 class MixVisionTransformer(nn.Module):
-    def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dims=[64, 128, 256, 512],
+    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dims=[64, 128, 256, 512],
                  num_heads=[1, 2, 4, 8], mlp_ratios=[4, 4, 4, 4], qkv_bias=False, qk_scale=None, drop_rate=0.,
                  attn_drop_rate=0., drop_path_rate=0., norm_layer=nn.LayerNorm,
                  depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1]):
         super().__init__()
-        self.num_classes = num_classes
         self.depths = depths
 
         # patch_embed
@@ -296,13 +295,6 @@ class MixVisionTransformer(nn.Module):
     def no_weight_decay(self):
         return {'pos_embed1', 'pos_embed2', 'pos_embed3', 'pos_embed4', 'cls_token'}  # has pos_embed may be better
 
-    def get_classifier(self):
-        return self.head
-
-    def reset_classifier(self, num_classes, global_pool=''):
-        self.num_classes = num_classes
-        self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
-
     def forward_features(self, x):
         B = x.shape[0]
         outs = []
@@ -355,7 +347,7 @@ class DWConv(nn.Module):
 
     def forward(self, x, H, W):
         B, N, C = x.shape
-        x = x.transpose(1, 2).view(B, C, H, W)
+        x = x.transpose(1, 2).contiguous().view(B, C, H, W)
         x = self.dwconv(x)
         x = x.flatten(2).transpose(1, 2)
 
