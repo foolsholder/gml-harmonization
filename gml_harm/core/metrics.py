@@ -2,6 +2,7 @@ import torch
 
 from catalyst import metrics
 from copy import copy
+from lpips import LPIPS
 
 from .functional import mse, psnr, fmse, fn_mse
 
@@ -85,5 +86,23 @@ class FNMSEMetric(metrics.FunctionalBatchMetric):
         """
         kwargs.update({'min_area': self.min_area})
         value = self.metric_fn(*args, **kwargs)
+        self.additive_metric.update(float(value), batch_size)
+        return value
+
+
+class LPIPSMetric(metrics.FunctionalBatchMetric):
+    def __init__(self, metric_key, lpips_model: str, **kwargs):
+        net = LPIPS(net=lpips_model).cuda()
+        super(LPIPSMetric, self).__init__(
+            metric_fn=net,
+            metric_key=metric_key,
+            **kwargs
+        )
+
+    @torch.no_grad()
+    def update(self, batch_size: int, *args, **kwargs) -> torch.Tensor:
+        # by default images from [0; 1]
+        kwargs.update({'normalize': True})
+        value = self.metric_fn(*args, **kwargs).mean()
         self.additive_metric.update(float(value), batch_size)
         return value

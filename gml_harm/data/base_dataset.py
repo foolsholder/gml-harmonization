@@ -22,7 +22,8 @@ class BaseDataset(ABCDataset):
                  crop: Compose = None,
                  augmentations: Compose = None,
                  to_tensor_transforms: Compose = None,
-                 keep_without_mask: float = 0.05) -> None:
+                 keep_without_mask: float = 0.05,
+                 replicate: int = 1) -> None:
         """
         default Compose.additional_targets = {
             'target': 'image'
@@ -41,6 +42,9 @@ class BaseDataset(ABCDataset):
 
         self.to_tensor_transforms = to_tensor_transforms
         self.dataset_samples: List[Any] = []
+        self.replicate: int = replicate
+        self._len: int = 0
+        self._base_len: int = 0
 
         self.keep_without_mask = keep_without_mask
 
@@ -69,7 +73,7 @@ class BaseDataset(ABCDataset):
             assert sample['target'].dtype == 'uint8'
 
     def __len__(self):
-        return len(self.dataset_samples)
+        return self._len
 
     def augment_sample(self, sample: Dict[str, Union[np.array, str]]) -> Dict[str, Union[np.array, str]]:
         if self.augmentations is None:
@@ -98,8 +102,9 @@ class BaseDataset(ABCDataset):
         if self.keep_without_mask > 0. and np.random.rand() < self.keep_without_mask:
             return True
         value = aug_output['mask'].sum()
-        #h, w = aug_output['mask'].shape[:2]
-        return value > 1.0# and value <= (0.4 * h * w)
+        h, w = aug_output['mask'].shape[:2]
+        mean_value = value / (h * w)
+        return value > 1.0 and 1.0 - mean_value >= 0.4
 
 
 class HDataset(BaseDataset):
@@ -117,9 +122,13 @@ class HDataset(BaseDataset):
 
         with open(images_lists_paths[0], 'r') as f:
             self.dataset_samples = [x.strip() for x in f.readlines()]
+        self._base_len = len(self.dataset_samples)
+        self._len = self._base_len * self.replicate
 
     # noinspection PyUnresolvedReferences
     def get_sample(self, idx: int) -> Dict[str, Union[np.array, str]]:
+        idx = idx % self._base_len
+
         composite_name: str = self.dataset_samples[idx]
         real_name: str = composite_name.split('_')[0] + '.jpg'
         mask_name: str = '_'.join(composite_name.split('_')[:-1]) + '.png'

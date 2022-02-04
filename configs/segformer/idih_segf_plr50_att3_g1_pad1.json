@@ -129,7 +129,7 @@
     {
       "metric_key": "loss",
       "model_key": "model",
-      "grad_clip_norm": 0.5,
+      "grad_clip_norm": 1.0,
       "optimizer_key": "optim"
     }
   ],

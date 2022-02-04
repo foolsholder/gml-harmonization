@@ -33,5 +33,7 @@ class SupervisedTrainer(BaseRunner):
             self.batch.update({
                 'outputs_255': outputs_255,
                 'targets_255': targets_255,
+                'targets_1': targets_255 / 255.,
+                'outputs_1': outputs_255 / 255.,
                 'targets_and_masks_255': (targets_255, masks)
             })

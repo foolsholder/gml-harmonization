@@ -4,4 +4,5 @@ typing
 albumentations
 imgaug
 numpy
+lpips
 opencv-python

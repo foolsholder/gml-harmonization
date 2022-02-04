@@ -64,8 +64,18 @@ def main():
         'HAdobe5k',
         'HFlickr',
         'Hday2night',
-        #'RealHM',
-        #'HVIDIT'
+        'RealHM',
+        'HVIDIT'
+    ]
+    cfg['metric_callbacks'] += [
+        {
+            "type": "LPIPSCallback",
+            "input_key": "outputs_1",
+            "target_key": "targets_1",
+            "metric_key": "lpips",
+            "lpips_model": "vgg",
+            "eval_only": True
+        },
     ]
     res = {}
     for dataset in datasets:

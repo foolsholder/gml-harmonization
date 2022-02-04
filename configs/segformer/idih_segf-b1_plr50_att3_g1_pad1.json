@@ -10,15 +10,22 @@
       "enc_masked_norm": false,
       "dec_norm_layer": "BatchNorm2d",
       "dec_masked_norm": false,
-      "dec_attention_start_pos": 3,
+      "dec_attention_start_pos": -1,
       "backbone_start_connect_pos": 2,
-      "backbone_channels": [96, 192, 384, 768],
+      "backbone_channels": [256],
       "aggregation_mode": "cat"
     },
     "backbone": {
-      "type": "Swin",
-      "pretrained": "../pretrained_checkpoints/swin_tiny_patch4_window7_512x512_ade20k.pth",
-      "out_indices": [0, 1, 2, 3]
+      "type": "SegFormer",
+      "bb_cfg": {
+        "type": "mit_b1"
+      },
+      "head_cfg": {
+        "in_channels": [64, 128, 320, 512],
+        "in_index": [0, 1, 2, 3],
+        "embedding_dim": 256
+      },
+      "pretrained": "../pretrained_checkpoints/segformer.b1.512x512.ade.160k.pth"
     },
     "mask_fusion_bb": "rgb"
   },
@@ -29,7 +36,7 @@
   },
   "optimizers": {
     "optim": {
-      "type": "AdamW",
+      "type": "Adam",
       "groups": [
         {
           "params": "base",
@@ -43,7 +50,8 @@
           "params": "mask_fusion_bb",
           "lr": 1e-3
         }
-      ]
+      ],
+      "weight_decay": 0
     }
   },
   "criterions": {
@@ -100,10 +108,16 @@
       "resnet_cfg": {
         "depth": 50,
         "dilations": [
-          1, 1, 2, 4
+          1,
+          1,
+          2,
+          4
         ],
         "strides": [
-          1, 2, 1, 1
+          1,
+          2,
+          1,
+          1
         ],
         "pretrained": "../pretrained_checkpoints/r50-d8_512x512_ade20k_dmnet.pth"
       }
@@ -122,7 +136,7 @@
     {
       "metric_key": "loss",
       "model_key": "model",
-      "grad_clip_norm": 1,
+      "grad_clip_norm": 1.0,
       "optimizer_key": "optim"
     }
   ],
